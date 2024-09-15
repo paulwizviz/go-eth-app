@@ -16,11 +16,11 @@ const (
 )
 
 var (
-	ErrMarshalRequest       = errors.New("marshal request error")
-	ErrUmarshalResponse     = errors.New("unmarshal respond error")
-	ErrUnmarshalBlock       = errors.New("unmarshal block error")
-	ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
-	ErrSendingRequest       = errors.New("sending request error")
+	errMarshalRequest       = errors.New("marshal request error")
+	errUmarshalResponse     = errors.New("unmarshal respond error")
+	errUnmarshalBlock       = errors.New("unmarshal block error")
+	errUnmarshalBlockNumber = errors.New("unmarshal block number error")
+	errSendingRequest       = errors.New("sending request error")
 )
 
 type request struct {
@@ -42,29 +42,29 @@ func currentBlock(url string) (*big.Int, error) {
 		JsonRPC: rpcVersion,
 		Method:  methodBlockNumber,
 		Params:  []interface{}{},
-		ID:      1,
+		ID:      1, // In production this would be replaced by Nounce
 	}
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return nil, fmt.Errorf("%w-%v", errMarshalRequest, err)
 	}
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrSendingRequest, err)
+		return nil, fmt.Errorf("%w-%v", errSendingRequest, err)
 	}
 	defer resp.Body.Close()
 
 	var rpcResp response
 	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+		return nil, fmt.Errorf("%w-%v", errUmarshalResponse, err)
 	}
 
 	// Convert the block number from hex to decimal
 	var blockNumber string
 	if err := json.Unmarshal(rpcResp.Result, &blockNumber); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
+		return nil, fmt.Errorf("%w-%v", errUnmarshalBlockNumber, err)
 	}
 
 	// Convert to integer
@@ -88,26 +88,26 @@ func getBlockTransactions(url string, blockNumber *big.Int) ([]Transaction, erro
 	// Marshal the request to JSON
 	reqBody, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return nil, fmt.Errorf("%w-%v", errMarshalRequest, err)
 	}
 
 	// Send the request
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrSendingRequest, err)
+		return nil, fmt.Errorf("%w-%v", errSendingRequest, err)
 	}
 	defer resp.Body.Close()
 
 	// Decode the response
 	var rpcResp response
 	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+		return nil, fmt.Errorf("%w-%v", errUmarshalResponse, err)
 	}
 
 	// Unmarshal the block data (including transactions)
 	var block Block
 	if err := json.Unmarshal(rpcResp.Result, &block); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlock, err)
+		return nil, fmt.Errorf("%w-%v", errUnmarshalBlock, err)
 	}
 
 	// Print transactions

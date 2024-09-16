@@ -1,6 +1,7 @@
 package store
 
 import (
+	"log"
 	"sync"
 )
 
@@ -18,14 +19,14 @@ func (s *mockStorage) Persists(key string, value []byte) error {
 		v := [][]byte{}
 		v = append(v, value)
 		s.kvstore[key] = v
-		//log.Println("Append value", s.kvstore)
+		log.Println("Append value", s.kvstore)
 		return nil
 	}
 	v := s.kvstore[key]
 	v = append(v, value)
 	s.kvstore[key] = v
 
-	//log.Println("New value", s.kvstore)
+	log.Println("New value", s.kvstore)
 
 	return nil
 

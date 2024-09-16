@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+// NewLatestParseBlock instantiate a parsed block counter
 func NewLatestParseBlock() LatestParseBlock {
 	return &latestBlock{
 		id: -1,

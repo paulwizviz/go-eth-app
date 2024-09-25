@@ -1,16 +1,25 @@
 package eth
 
 import (
+	"context"
 	"log"
+	"time"
 )
 
 // Transaction is a structure for storing transaction data
 type Transaction struct {
-	Hash  string
-	From  string
-	To    string
-	Value string
-	Block int
+	BlockHash            string `json:"blockHash"`
+	Hash                 string `json:"hash"`
+	From                 string `json:"from"`
+	To                   string `json:"to"`
+	Input                string `json:"input"`
+	Value                string `json:"value"`
+	Block                string `json:"blockNumber"`
+	Type                 string `json:"type"`
+	Gas                  string `json:"gas"`
+	GasPrice             string `json:"gasPrice"`
+	MaxFeePerGas         string `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
 }
 
 // Block is a representation of a block from Ethereum
@@ -24,51 +33,47 @@ type Block struct {
 // replaced with the field BlockNum to make
 // it easier to map for downstream operation.
 type BlockTxn struct {
-	BlockNum int
+	BlockNum string
 	Txns     []Transaction
 }
 
 // ReadNetwork is an operation to read data from
 // the Ethereum network and ensure data is channelled
 // to receiver.
-func ReadNetwork(url string) chan BlockTxn {
-	c := make(chan BlockTxn, 1)
+func ReadNetwork(c context.Context, url string) chan BlockTxn {
+	ch := make(chan BlockTxn, 1)
+	ticker := time.NewTicker(5000 * time.Millisecond)
 	go func(ch chan BlockTxn) {
 		for {
-			bt := BlockTxn{}
-			blockNumber, err := currentBlock(url)
-			if err != nil {
-				log.Println(err)
-				continue
+			select {
+			case <-ticker.C:
+				getLatestBlock(ch, url)
+			case <-c.Done():
+				return
 			}
-			bt.BlockNum = int(blockNumber.Int64())
-			txns, err := getBlockTransactions(url, blockNumber)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			bt.Txns = txns
-			ch <- bt
 		}
-	}(c)
-	return c
+	}(ch)
+
+	getLatestBlock(ch, url)
+
+	return ch
 }
 
-// LatestParseBlock represent a persistent store
-// of the latest block ID.
-type LatestParseBlock interface {
-	Update(id int)
-	GetID() int
-}
-
-// Parser represents a handler to enable a
-// client application to obtained data from
-// local data store.
-type Parser interface {
-	// last parsed block
-	GetCurrentBlock() int
-	// add address to observer
-	Subscribe(address string) bool
-	// list of inbound or outbound transactions for an address
-	GetTransactions(address string) []Transaction
+func getLatestBlock(ch chan BlockTxn, url string) {
+	log.Println("Getting latest block...")
+	bt := BlockTxn{}
+	blockNumber, err := currentBlock(url)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	bt.BlockNum = blockNumber.String()
+	log.Printf("Got block %s", bt.BlockNum)
+	txns, err := getBlockTransactions(url, blockNumber)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	bt.Txns = txns
+	ch <- bt
 }

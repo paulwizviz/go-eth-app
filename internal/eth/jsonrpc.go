@@ -110,6 +110,5 @@ func getBlockTransactions(url string, blockNumber *big.Int) ([]Transaction, erro
 		return nil, fmt.Errorf("%w-%v", errUnmarshalBlock, err)
 	}
 
-	// Print transactions
 	return block.Transactions, nil
 }

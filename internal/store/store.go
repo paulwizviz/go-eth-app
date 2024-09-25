@@ -5,19 +5,13 @@ import (
 )
 
 var (
-	ErrEntryExists   = errors.New("entry exists error")
-	ErrValueNotFound = errors.New("value not found")
+	ErrKeyNotFound = errors.New("key not found")
 )
 
 // Storage is an abstraction of a persistent key value store
 type Storage interface {
-	Persists(key string, value []byte) error
+	Append(key string, value []byte) error
 	Get(key string) ([][]byte, error)
-}
-
-// NewMockStorage instantage a mock storage
-func NewMockStorage() Storage {
-	return &mockStorage{
-		kvstore: make(map[string][][]byte),
-	}
+	Set(key string, value [][]byte) error
+	Keys() []string
 }

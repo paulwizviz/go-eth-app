@@ -4,9 +4,9 @@ This is a simple project to connect to an Ethereum network to get transaction da
 
 ## Requirements
 
-* Using only JSON-RPC
-* Parse Transaction
-* Store Transaction in memory
+- Using only JSON-RPC
+- Parse Transaction
+- Store Transaction in memory
 
 ## Solution
 
@@ -26,16 +26,23 @@ go run cmd/txparser/main.go
 
 The running project will spin up a simple REST server. Use the following `curl` to interact with the project:
 
-- Get latest block id:
+- Get latest block height:
+
 ```sh
-curl -X GET /block/current
-```
-- Subscribe an address
-```sh
-curl -X PUT /subscribe/{address}
+curl -X GET /
 ```
 
--  Get a transaction for a given address
+- Get transactions for a given address
+
 ```sh
-curl -X PUT /transaction/{address}
+curl -X GET /addresses/{address}
+```
+
+- Subscribe an address
+
+> This endpoint is for SSE (Server-Sent Events) to listen for new transactions for a given address.
+> https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+
+```sh
+curl -X GET /addresses/{address}/subscribe
 ```

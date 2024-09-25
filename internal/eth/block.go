@@ -4,24 +4,31 @@ import (
 	"sync"
 )
 
+// LatestParseBlock represent a persistent store
+// of the latest block ID.
+type LatestParseBlock interface {
+	Update(block string)
+	Get() string
+}
+
 // NewLatestParseBlock instantiate a parsed block counter
 func NewLatestParseBlock() LatestParseBlock {
 	return &latestBlock{
-		id: -1,
+		block: "-1",
 	}
 }
 
 type latestBlock struct {
-	mu sync.Mutex
-	id int
+	mu    sync.Mutex
+	block string
 }
 
-func (l *latestBlock) Update(id int) {
+func (l *latestBlock) Update(block string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.id = id
+	l.block = block
 }
 
-func (l *latestBlock) GetID() int {
-	return l.id
+func (l *latestBlock) Get() string {
+	return l.block
 }

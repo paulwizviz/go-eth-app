@@ -1,48 +1,36 @@
-# Overview
+# Ethereum Development with Go: An Educational Project
 
-This is a simple project to connect to an Ethereum network to get transaction data, parse it and persists the parse data
+This project serves as a practical guide for developers interested in learning how to use the Go programming language to interact with the Ethereum network. Through a series of examples and tools, this project demonstrates key concepts and workflows, making it easier to understand and implement blockchain-based applications.
 
-## Requirements
+Whether you're a blockchain enthusiast, a student, or an experienced developer looking to explore the Ethereum ecosystem with Go, this educational project provides a foundation for creating decentralized applications (dApps) and interacting with Ethereum smart contracts.
 
-- Using only JSON-RPC
-- Parse Transaction
-- Store Transaction in memory
+## Scope of the Project
 
-## Solution
+The project focuses on building foundational tools and applications using Go. The key deliverables include:
 
-1. The layout of this project follows the principles outline [here](https://paulwizviz.github.io/go/2022/12/23/go-proverb-architecture.html)
+1. **Web3 Application**: A simple example of how a hypothetical user can send transactions to the Ethereum network and interact with deployed smart contracts.
+2. **Wallet**: Functionality to manage cryptographic keys, allowing users to securely store and access their Ethereum addresses.
+3. **Smart Contract Deployment**: Tools to deploy smart contracts onto the Ethereum network directly from a Go application.
+4. **Blockchain Viewer**: A minimalistic blockchain explorer to retrieve and display Ethereum blockchain data.
 
-2. The project is organised around two packages `eth` -- containing operations to interact with Ethereum network -- and `store` -- containing a mock of a key value store.
+These features are designed to highlight essential workflows and integration patterns between Go and Ethereum.
 
-3. The assumption is the `Parser` is the business logic responsible for storing data read from the Ethereum network, so that consumer of the object is able to read data from store without making RPC call to the Ethereum network.
+## Disclaimer
 
-## Running the Project
+This project is intended solely for educational purposes. It is not a production-ready solution and should not be used in production environments without significant modifications, security audits, and testing.
 
-To run the project, execute the following command:
+This project is ongoing and may undergo changes without prior notification. By using this project, you acknowledge that you do so at your own risk. The authors of this project accept no liability for any issues or damages resulting from its use. Please use this project as a learning resource and not as a fully functional or secure application.
 
-```sh
-go run cmd/txparser/main.go
-```
+## Copyright
 
-The running project will spin up a simple REST server. Use the following `curl` to interact with the project:
+Unless otherwise specified, this project is copyrighted as follows:
 
-- Get latest block height:
+Copyright 2024 The Contributors to go-eth-app
 
-```sh
-curl -X GET /
-```
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:
 
-- Get transactions for a given address
+    http://www.apache.org/licenses/LICENSE-2.0
 
-```sh
-curl -X GET /addresses/{address}
-```
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-- Subscribe an address
-
-> This endpoint is for SSE (Server-Sent Events) to listen for new transactions for a given address.
-> https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-
-```sh
-curl -X GET /addresses/{address}/subscribe
-```
+For a list of contributors, refer to the CONTRIBUTORS file or the repository's commit history.

@@ -1,29 +1,30 @@
-# Go Web3 App for Ethereum: An Educational Project
+# Building Web3 Applications with Go: An Educational Project
 
-This project serves as a practical guide for developers interested in learning how to use the Go programming language 
-to interact with the Ethereum network. Through a series of examples and tools, this project demonstrates key concepts 
-and workflows, making it easier to understand and implement blockchain-based applications.
+This project provides a practical guide for developers to explore the Ethereum ecosystem through the Go programming language. By leveraging a hypothetical product, this educational initiative demonstrates key concepts and workflows, making it accessible for developers to build and interact with blockchain-based applications.
 
-## Intended Audiance
+## Intended Audience
 
-Any blockchain enthusiast, a student, or an experienced developer looking to explore the Ethereum 
-ecosystem with Go, this educational project provides a foundation for creating decentralized Applications (dApps) 
-and interacting with Ethereum smart contracts.
+This project is designed for blockchain enthusiasts, students, and experienced developers who wish to explore the Ethereum ecosystem using Go. Whether you're new to decentralized applications (dApps) or looking to deepen your understanding of smart contracts, this educational resource lays the groundwork for building and interacting with Ethereum-based applications.
 
 ## Scope of the Project
 
-The project focuses on building foundational tools and applications using Go. The key deliverables include:
+This project adopts the development of a hypothetical product as a practical and structured approach to demonstrate building Web3 applications with Go. By designing a product with specific features, this educational effort offers a hands-on experience to help developers understand and implement the foundational elements of Ethereum application development. The product includes the following features:
 
-1. **Web3 Application**: A simple example of how a hypothetical user can send transactions to the Ethereum network and interact with deployed smart contracts.
-2. **Wallet**: Functionality to manage cryptographic keys, allowing users to securely store and access their Ethereum addresses.
-3. **Smart Contract Deployment**: Tools to deploy smart contracts onto the Ethereum network directly from a Go application.
-4. **Blockchain Viewer**: A minimalistic blockchain explorer to retrieve and display Ethereum blockchain data.
+1. **Web3 Application**: An example demonstrating how users can send transactions to the Ethereum network and interact with deployed smart contracts.
 
-These features are designed to highlight essential workflows and integration patterns between Go and Ethereum.
+2. **Wallet**: Functionality for managing cryptographic keys, enabling users to securely store and access their Ethereum addresses.
+
+3. **Smart Contract Deployment**: Tools for deploying smart contracts to the Ethereum network directly from a Go application.
+
+4. **Blockchain Viewer**: A minimal blockchain explorer for retrieving and displaying Ethereum blockchain data.
+
+By centering the project around this hypothetical product, the approach provides a structured and practical path for learning how to build Web3 applications with Go.
+
+For detail descriptions of the techniques and architecture, please refer to the [docs](./docs/content.md).
 
 ## Disclaimer
 
-This project is intended solely for educational purposes. It is not a production-ready solution and should not be used in production environments without significant modifications, security audits, and testing.
+This project is for educational purposes only. It is not a production-ready solution and requires significant modifications, rigorous security audits, and extensive testing before use in any production environment.
 
 This project is ongoing and may undergo changes without prior notification. By using this project, you acknowledge that you do so at your own risk. The authors of this project accept no liability for any issues or damages resulting from its use. Please use this project as a learning resource and not as a fully functional or secure application.
 

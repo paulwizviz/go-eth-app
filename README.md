@@ -1,8 +1,14 @@
-# Ethereum Development with Go: An Educational Project
+# Go Web3 App for Ethereum: An Educational Project
 
-This project serves as a practical guide for developers interested in learning how to use the Go programming language to interact with the Ethereum network. Through a series of examples and tools, this project demonstrates key concepts and workflows, making it easier to understand and implement blockchain-based applications.
+This project serves as a practical guide for developers interested in learning how to use the Go programming language 
+to interact with the Ethereum network. Through a series of examples and tools, this project demonstrates key concepts 
+and workflows, making it easier to understand and implement blockchain-based applications.
 
-Whether you're a blockchain enthusiast, a student, or an experienced developer looking to explore the Ethereum ecosystem with Go, this educational project provides a foundation for creating decentralized applications (dApps) and interacting with Ethereum smart contracts.
+## Intended Audiance
+
+Any blockchain enthusiast, a student, or an experienced developer looking to explore the Ethereum 
+ecosystem with Go, this educational project provides a foundation for creating decentralized Applications (dApps) 
+and interacting with Ethereum smart contracts.
 
 ## Scope of the Project
 

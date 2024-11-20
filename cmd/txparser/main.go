@@ -7,10 +7,10 @@ import (
 	"net"
 	"net/http"
 	"os/signal"
+	"paulwizviz/go-eth-app/internal/eth"
+	rest "paulwizviz/go-eth-app/internal/http"
 	"syscall"
 	"time"
-	"txparser/internal/eth"
-	rest "txparser/internal/http"
 )
 
 const EthUrl = "https://ethereum-rpc.publicnode.com"

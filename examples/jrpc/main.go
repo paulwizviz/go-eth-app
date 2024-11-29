@@ -16,10 +16,11 @@ func main() {
 	fmt.Println(blknum)
 	fmt.Println(jrpc.BigIntToHexString(blknum))
 
-	result, err := jrpc.GetBlockByNumber(url, 1, "latest", true)
+	block, err := jrpc.GetBlockByNumber(url, 1, "latest", true)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(result.Number)
+	fmt.Printf("Block number: %v\n", block.Number)
+	fmt.Printf("Block transactions. Types: %T", block.Transactions)
 }

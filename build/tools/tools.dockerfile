@@ -1,5 +1,5 @@
-ARG OS_VER
-ARG GO_VER
+ARG OS_VER=22.04
+ARG GO_VER=1.23.3-bookworm
 
 FROM golang:${GO_VER} AS builder
 

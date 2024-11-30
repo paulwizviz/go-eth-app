@@ -26,7 +26,8 @@ For detail descriptions of the techniques and architecture that are deployed in 
 
 * Application Programming Interfaces 
     * [JSON RPC](./docs/jsonrpc.md)
-    * Go ABI from Solidity
+    * [Go ABI from Solidity](./docs/abi.md)
+* [Design](./docs/design.md)
 
 ## Disclaimer
 

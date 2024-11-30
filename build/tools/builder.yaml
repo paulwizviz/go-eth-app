@@ -10,3 +10,4 @@ services:
         OS_VER: ${OS_VER}
         SOLC_VER: ${SOLC_VER}
     image: ${GETH_TOOLS_IMAGE_NAME}
+    

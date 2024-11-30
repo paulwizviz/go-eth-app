@@ -1,0 +1,12 @@
+
+services:
+
+  gethnode:
+    build:
+      context: ../../
+      dockerfile: ./build/node/geth.dockerfile
+      args:
+        GETH_VER: ${GETH_VER}
+        OS_VER: ${OS_VER}
+        GO_VER: ${GO_VER}
+    image: ${GETH_NODE_IMAGE_NAME}

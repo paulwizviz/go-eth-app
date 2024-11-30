@@ -1,0 +1,12 @@
+services:
+
+  gethnode:
+    build:
+      context: ../../
+      dockerfile: ./build/tools/tools.dockerfile
+      args:
+        GETH_VER: ${GETH_VER}
+        GO_VER: ${GO_VER}
+        OS_VER: ${OS_VER}
+        SOLC_VER: ${SOLC_VER}
+    image: ${GETH_TOOLS_IMAGE_NAME}

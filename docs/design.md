@@ -6,7 +6,9 @@ This section describes the features and architecture of this project's hypotheti
 
 The user stories here represents features of this project's hypothetical product features.
 
-**TO DO**
+### Persona
+
+* Alice - She is a technical person capable of writing applications and is comfortable using command line applications.
 
 ## References
 

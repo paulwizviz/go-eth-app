@@ -19,8 +19,8 @@ function abi(){
     local pkg="hello"
     local type="HelloWorld"
     docker run -v ${PWD}/solidity/abi/$pkg/$abi:/opt/abi/$abi \
-               -v ${PWD}/internal/$pkg:/opt/internal/$pkg \
-               ${GETH_TOOLS_IMAGE_NAME} abigen --abi /opt/abi/$abi --pkg $pkg --type $type --out /opt/internal/$pkg/"${pkg}.go"
+               -v ${PWD}/internal/contract/$pkg:/opt/contract/$pkg \
+               ${GETH_TOOLS_IMAGE_NAME} abigen --abi /opt/abi/$abi --pkg $pkg --type $type --out /opt/contract/$pkg/"${pkg}.go"
 }
 
 COMMAND=$1

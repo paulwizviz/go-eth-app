@@ -1,4 +1,4 @@
-# Building Web3 Applications with Go: An Educational Project
+# Building Decentralised Application (dApp) with Go: An Educational Project
 
 This project provides a practical guide for developers to explore the Ethereum ecosystem through the Go programming language. By leveraging a hypothetical product, this educational initiative demonstrates key concepts and workflows, making it accessible for developers to build and interact with blockchain-based applications.
 

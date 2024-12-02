@@ -6,3 +6,7 @@ services:
     ports:
       - "8545:8545"
       - "30303:30303"
+
+networks:
+  local:
+    name: ${NETWORK_NAME}

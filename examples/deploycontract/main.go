@@ -2,60 +2,14 @@ package main
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 	"paulwizviz/go-eth-app/internal/contract"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
-
-func deployContract(client *ethclient.Client, privateKey *ecdsa.PrivateKey) common.Address {
-	publicKey := privateKey.PublicKey
-	fromAddress := crypto.PubkeyToAddress(publicKey)
-
-	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	gasLimit := uint64(3000000)
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Smart contract bytecode and ABI (compiled using solc or Remix IDE)
-	compiledContract := "0x..." // Bytecode
-	tx := types.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, common.FromHex(compiledContract))
-
-	chainID, err := client.NetworkID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = client.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Contract deployed! Transaction Hash: %s\n", signedTx.Hash().Hex())
-
-	// Get contract address
-	contractAddress := crypto.CreateAddress(fromAddress, nonce)
-	fmt.Println("Contract Address:", contractAddress.Hex())
-	return contractAddress
-}
 
 func main() {
 

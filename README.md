@@ -20,15 +20,13 @@ This project adopts the development of a hypothetical product as a practical and
 
 By centering the project around this hypothetical product, the approach provides a structured and practical path for learning how to build Web3 applications with Go.
 
-## Topics
-
-For detail descriptions of the techniques and architecture that are deployed in this project, refer to the following topic:
+## Project Content
 
 * Application Programming Interfaces 
     * [JSON RPC](./docs/jsonrpc.md)
     * [Go ABI from Solidity](./docs/abi.md)
-* [Design](./docs/design.md) - This section describes the rational behind the hypothetical product
-* Tools - This section describes the tools incorprated here to support the project
+* [Design](./docs/design.md) - Description of the design of the product.
+* [Tools](./docs/tools.md) - Description of the tools to support the development of the project.
 
 ## Disclaimer
 

@@ -1,9 +1,11 @@
 #!/bin/bash
 
-export GETH_NODE_IMAGE_NAME="go-eth-app/gethnode"
-export GETH_VER=master
-export OS_VER=3.18
-export GO_VER=1.22.1-alpine
+if [ "$(basename $(realpath .))" != "go-eth-app" ]; then
+    echo "You are outside the scope of the project"
+    exit 0
+else
+    . ./scripts/images.sh
+fi
 
 COMMAND=$1
 

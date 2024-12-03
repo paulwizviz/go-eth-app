@@ -9,4 +9,5 @@ var (
 	ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
 	ErrSendingRequest       = errors.New("sending request error")
 	ErrMismatchResponse     = errors.New("mismatch response error")
+	ErrUnmarshalBalance     = errors.New("balance error")
 )

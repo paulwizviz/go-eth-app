@@ -5,9 +5,9 @@ services:
       context: ../../
       dockerfile: ./build/tools/tools.dockerfile
       args:
-        GETH_VER: ${GETH_VER}
-        GO_VER: ${GO_VER}
-        OS_VER: ${OS_VER}
-        SOLC_VER: ${SOLC_VER}
+        GETH_VER: "master"
+        GO_VER: 1.23.3-bookworm
+        OS_VER: 22.04
+        SOLC_VER: v0.8.28
     image: ${GETH_TOOLS_IMAGE_NAME}
     

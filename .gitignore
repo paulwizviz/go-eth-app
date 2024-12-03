@@ -2,5 +2,6 @@
 .DS_Store
 
 /solidity/abi
-/internal/hello
+/internal/contract/hello
 /tmp
+/deployment/gethdev/geth-data

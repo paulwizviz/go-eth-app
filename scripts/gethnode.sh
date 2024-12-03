@@ -11,7 +11,7 @@ COMMAND=$1
 
 case $COMMAND in
     "build")
-        docker compose -f ./build/node/builder.yaml build
+        docker compose -f ./build/gethnode/builder.yaml build
         ;;
      "clean")
         docker rmi -f ${GETH_NODE_IMAGE_NAME}

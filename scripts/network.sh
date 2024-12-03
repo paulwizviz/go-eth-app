@@ -12,7 +12,7 @@ export NETWORK_NAME=go-eth-app_network
 COMMAND=$1
 SUBCOMMAND=$2
 
-function devnode(){
+function gethdev(){
     local cmd=$1
     case $cmd in
         "start")
@@ -28,8 +28,8 @@ function devnode(){
 }
 
 case $COMMAND in
-    "dev")
-        devnode $SUBCOMMAND
+    "gethdev")
+        gethdev $SUBCOMMAND
         ;;
     *)
         echo "Usage $0 [dev]"

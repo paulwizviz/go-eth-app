@@ -32,6 +32,6 @@ case $COMMAND in
         gethdev $SUBCOMMAND
         ;;
     *)
-        echo "Usage $0 [dev]"
+        echo "Usage $0 [gethdev]"
         ;;
 esac

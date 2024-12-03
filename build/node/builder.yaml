@@ -6,7 +6,7 @@ services:
       context: ../../
       dockerfile: ./build/node/geth.dockerfile
       args:
-        GETH_VER: master
+        GETH_VER: v1.14.12
         OS_VER: 3.18
         GO_VER: 1.22.1-alpine
     image: ${GETH_NODE_IMAGE_NAME}

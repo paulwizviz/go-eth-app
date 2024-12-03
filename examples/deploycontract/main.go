@@ -19,7 +19,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gasLimit := uint64(3_000_000)
+	pubkey := privateKey.PublicKey
+
+	address := crypto.PubkeyToAddress(pubkey).Hex()
+	fmt.Println(address)
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -38,6 +41,7 @@ func main() {
 	fmt.Println("Connected to Geth local node")
 
 	// Deploy contract
+	gasLimit := uint64(138_612)
 	addr, err := contract.DeployContract(context.Background(), client, privateKey, gasLimit, content)
 	if err != nil {
 		log.Fatal(err)

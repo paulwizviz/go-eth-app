@@ -1,0 +1,18 @@
+services:
+
+  geth:
+    image: ${GETH_NODE_IMAGE_NAME}
+    command: /root/init.sh
+    volumes:
+      - ./genesis.json:/genesis.json
+      - ./geth-data:/root/.ethereum
+      - ./init.sh:/root/init.sh
+    ports:
+      - "8545:8545"
+      - "30303:30303"
+    networks:
+      - local
+
+networks:
+  local:
+    name: ${NETWORK_NAME}

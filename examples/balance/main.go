@@ -8,7 +8,7 @@ import (
 
 func main() {
 	url := "http://localhost:8545"
-	addr := "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba" // Dev mode address
+	addr := "0x24c0d0cB3C5d8EbBcC5C7426872B0693A259e717" // Dev mode address
 
 	bal, err := jrpc.GetBalance(url, 1, addr, jrpc.BlockTagLATEST)
 	if err != nil {

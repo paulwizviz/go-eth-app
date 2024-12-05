@@ -3,6 +3,7 @@ package jrpc
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -53,6 +54,20 @@ const (
 	BlockTagPENDING = "pending"
 )
 
+var (
+	// ErrMarshalRequest error marshaling JSON-RPC request
+	ErrMarshalRequest = errors.New("marshal request error")
+	// ErrSendingRequest error posting JSON-RPC request
+	ErrSendingRequest = errors.New("sending request error")
+	// ErrUmarshalResponse error unmarshaling JSON-RPC response
+	ErrUmarshalResponse = errors.New("unmarshal respond error")
+	// ErrMismatchResponse error mismatch JSON-RPC request
+	ErrMismatchResponse = errors.New("mismatch response error")
+)
+
+// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
+var ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
+
 // BlockNumber returns the block number of the latest block
 func BlockNumber(url string, id uint) (*big.Int, error) {
 	return blockNumber(url, id)
@@ -99,6 +114,9 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 
 	return blockNumber, nil
 }
+
+// ErrUnmarshalBlock error unmarsaling block data from response
+var ErrUnmarshalBlock = errors.New("unmarshal block error")
 
 // GetBlockByNumber returns a block type
 //
@@ -154,6 +172,9 @@ func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 	return blk, nil
 }
 
+// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
+var ErrUnmarshalBalance = errors.New("balance error")
+
 // GetBalance returns the balance for a given address and block
 //
 // Arguments:
@@ -206,4 +227,106 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 	}
 
 	return balance, nil
+}
+
+type AccessListArg struct {
+	Address     string   `json:"address"`
+	StorageKeys []string `json:"storageKeys"`
+}
+
+// ErrTransformTxnArg error transforming TxnArg to map[string]any
+var ErrTransformTxnArg = errors.New("transform txn argument error")
+
+// TxnArg argument for send transaction call
+type TxnArg struct {
+	Type                 string          `json:"type,omitempty"`
+	Nonce                string          `json:"nonce,omitempty"`
+	To                   string          `json:"to,omitempty"`
+	From                 string          `json:"from,omitempty"`
+	Gas                  string          `json:"gas,omitempty"`
+	Value                string          `json:"value,omitempty"`
+	Input                string          `json:"input,omitempty"`
+	GasPrice             string          `json:"gasPrice,omitempty"`
+	MaxPriorityFeePerGas string          `json:"maxPriorityFeePerGas,omitempty"`
+	MaxFreePerGas        string          `json:"maxFeePerGas,omitempty"`
+	MaxFeePerBlobGas     string          `json:"maxFeePerBlobGas,omitempty"`
+	AccessList           []AccessListArg `json:"accessList,omitempty"`
+	BlobVersionedHashes  []string        `json:"blobVersionedHashes,omitempty"`
+	Blobs                []string        `json:"blobs,omitempty"`
+	ChainID              string          `json:"chainId,omitempty"`
+}
+
+func transformTxnArg(txn TxnArg) (map[string]any, error) {
+
+	b, err := json.Marshal(txn)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrTransformTxnArg, err)
+	}
+
+	var m map[string]any
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrTransformTxnArg, err)
+	}
+
+	return m, nil
+}
+
+// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
+var ErrUnmarshalTxnHash = errors.New("transaction hash error")
+
+// SendTransaction returns a hash of the transaction
+//
+// Arguments:
+//
+//	url - to an ethereum json rpc endpoint
+//	id - an identifier to match request and response
+//	txn - transaction argument in object form
+func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
+	// Convert struct to map[string]any
+	m, err := transformTxnArg(txn)
+	if err != nil {
+		return "", err
+	}
+	return sendTransaction(url, id, m)
+}
+
+func sendTransaction(url string, id uint, txn map[string]any) (string, error) {
+
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_sendTransaction",
+		Params:  []any{txn},
+		ID:      id,
+	}
+
+	// Marshal the request to JSON
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return "", fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	// Send the request
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	// Decode the response
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return "", fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return "", ErrMismatchResponse
+	}
+
+	// Unmarshal txnHash
+	var txnHash string
+	if err := json.Unmarshal(rpcResp.Result, &txnHash); err != nil {
+		return "", fmt.Errorf("%w-%v", ErrUnmarshalTxnHash, err)
+	}
+	return txnHash, nil
 }

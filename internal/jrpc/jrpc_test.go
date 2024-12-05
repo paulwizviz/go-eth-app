@@ -264,23 +264,56 @@ func TestUnmarshal(t *testing.T) {
 	for i, tc := range testcases {
 		var blk Block
 		err := json.Unmarshal(tc.input, &blk)
-		assert.NoError(t, err, fmt.Sprintf("Case: %d Error: %v", i, err))
+		if assert.NoError(t, err, fmt.Sprintf("Case: %d Error: %v", i, err)) {
+			switch got := blk.Transactions.(type) {
+			case []string:
+				assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
+			case []TxnPreEIP2718:
+				assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
+			case []TxnEIP2718:
+				assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
+			case []TxnEIP2930:
+				assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
+			case []TxnEIP1559:
+				assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
+			case []TxnEIP4844:
+				assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
+			default:
+				assert.Fail(t, "Case not caught", fmt.Sprintf("Case: %d", i))
+			}
+		}
+	}
+}
 
-		switch got := blk.Transactions.(type) {
-		case []string:
+func TestTransformTxnArg(t *testing.T) {
+	testcases := []struct {
+		input TxnArg
+		want  map[string]any
+	}{
+		{
+			input: TxnArg{
+				To:   "Hello",
+				From: "World",
+			},
+			want: map[string]any{"from": "World", "to": "Hello"},
+		},
+		{
+			input: TxnArg{
+				AccessList: []AccessListArg{
+					{
+						Address:     "<address>",
+						StorageKeys: []string{"abc", "efg"},
+					},
+				},
+			},
+			want: map[string]any{"accessList": []any{map[string]any{"address": "<address>", "storageKeys": []any{"abc", "efg"}}}},
+		},
+	}
+
+	for i, tc := range testcases {
+		got, err := transformTxnArg(tc.input)
+		if assert.NoError(t, err, fmt.Sprintf("Case: %d Error: %v", i, err)) {
 			assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
-		case []TxnPreEIP2718:
-			assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
-		case []TxnEIP2718:
-			assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
-		case []TxnEIP2930:
-			assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
-		case []TxnEIP1559:
-			assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
-		case []TxnEIP4844:
-			assert.Equal(t, tc.want, got, fmt.Sprintf("Case: %d Want: %v Got: %v", i, tc.want, got))
-		default:
-			assert.Fail(t, "Case not caught", fmt.Sprintf("Case: %d", i))
 		}
 	}
 }

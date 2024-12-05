@@ -28,6 +28,27 @@ By centering the project around this hypothetical product, the approach provides
 * [Design](./docs/design.md) - Description of the design of the product.
 * [Tools](./docs/tools.md) - Description of the tools to support the development of the project.
 
+## Terms Used in this Project
+
+The terms used in this project are based on the [official documentation](https://ethereum.org/en/developers/docs/).
+
+* Geth client. The Geth client is the default client used in this project. Much of the development in this project is based on the [Geth source code](https://github.com/ethereum/go-ethereum).
+
+* Node. In this project, the Docker container is the default node.
+
+* Unit of Ether. The default unit of Ether is a Wei used in this project is the `Wei`.
+
+| Unit	| Wei Equivalent | Description |
+| --- | --- | --- |
+| Wei | 10^0 = 1 wei | The smallest unit of Ether. |
+| Kwei (Babbage) | 10^3 = 1,000 wei | Thousand wei. |
+| Mwei (Lovelace) | 10^6 = 1,000,000 wei | Million wei. |
+| Gwei (Shannon) | 10^9 = 1,000,000,000 wei | Billion wei, often used for gas prices. |
+| Microether (Szabo) | 10^{12} = 1,000,000,000,000 wei | Trillion wei. |
+| Milliether (Finney) | 10^{15} = 1,000,000,000,000,000 wei | Quadrillion wei. |
+| Ether | 10^{18} = 1,000,000,000,000,000,000 wei | 1 Ether. |
+
+
 ## Disclaimer
 
 This project is for educational purposes only. It is not a production-ready solution and requires significant modifications, rigorous security audits, and extensive testing before use in any production environment.

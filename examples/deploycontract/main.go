@@ -42,7 +42,7 @@ func main() {
 
 	// Deploy contract
 	gasLimit := uint64(138_612)
-	addr, err := contract.DeployContract(context.Background(), client, privateKey, gasLimit, content)
+	addr, err := contract.DeployContract(context.Background(), client, privateKey, 1_000_000_000, 1_000_000_000, gasLimit, content)
 	if err != nil {
 		log.Fatal(err)
 	}

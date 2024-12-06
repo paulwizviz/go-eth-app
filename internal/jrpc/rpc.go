@@ -65,13 +65,13 @@ var (
 	ErrMismatchResponse = errors.New("mismatch response error")
 )
 
-// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
-var ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
-
 // BlockNumber returns the block number of the latest block
 func BlockNumber(url string, id uint) (*big.Int, error) {
 	return blockNumber(url, id)
 }
+
+// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
+var ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
 
 func blockNumber(url string, id uint) (*big.Int, error) {
 
@@ -115,9 +115,6 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 	return blockNumber, nil
 }
 
-// ErrUnmarshalBlock error unmarsaling block data from response
-var ErrUnmarshalBlock = errors.New("unmarshal block error")
-
 // GetBlockByNumber returns a block type
 //
 // Argments:
@@ -131,6 +128,9 @@ var ErrUnmarshalBlock = errors.New("unmarshal block error")
 func GetBlockByNumber(url string, id uint, block string, hydrated bool) (Block, error) {
 	return getBlockByNumber(url, id, block, hydrated)
 }
+
+// ErrUnmarshalBlock error unmarsaling block data from response
+var ErrUnmarshalBlock = errors.New("unmarshal block error")
 
 func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, error) {
 	req := request{
@@ -172,9 +172,6 @@ func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 	return blk, nil
 }
 
-// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
-var ErrUnmarshalBalance = errors.New("balance error")
-
 // GetBalance returns the balance for a given address and block
 //
 // Arguments:
@@ -188,6 +185,9 @@ var ErrUnmarshalBalance = errors.New("balance error")
 func GetBalance(url string, id uint, address string, block string) (string, error) {
 	return getBalance(url, id, address, block)
 }
+
+// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
+var ErrUnmarshalBalance = errors.New("balance error")
 
 func getBalance(url string, id uint, address string, block string) (string, error) {
 	req := request{
@@ -229,13 +229,15 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 	return balance, nil
 }
 
+// SendRawTransaction
+// NOTE: Use this in cases where the signing is handled manually
+// and private key is not stored on the node
+// TO DO
+
 type AccessListArg struct {
 	Address     string   `json:"address"`
 	StorageKeys []string `json:"storageKeys"`
 }
-
-// ErrTransformTxnArg error transforming TxnArg to map[string]any
-var ErrTransformTxnArg = errors.New("transform txn argument error")
 
 // TxnArg argument for send transaction call
 type TxnArg struct {
@@ -256,6 +258,9 @@ type TxnArg struct {
 	ChainID              string          `json:"chainId,omitempty"`
 }
 
+// ErrTransformTxnArg error transforming TxnArg to map[string]any
+var ErrTransformTxnArg = errors.New("transform txn argument error")
+
 func transformTxnArg(txn TxnArg) (map[string]any, error) {
 
 	b, err := json.Marshal(txn)
@@ -272,10 +277,8 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 	return m, nil
 }
 
-// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
-var ErrUnmarshalTxnHash = errors.New("transaction hash error")
-
-// SendTransaction returns a hash of the transaction
+// SendTransaction returns a hash of the transaction.
+// NOTE: use this for cases where the private key is stored on the node.
 //
 // Arguments:
 //
@@ -290,6 +293,9 @@ func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
 	}
 	return sendTransaction(url, id, m)
 }
+
+// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
+var ErrUnmarshalTxnHash = errors.New("transaction hash error")
 
 func sendTransaction(url string, id uint, txn map[string]any) (string, error) {
 

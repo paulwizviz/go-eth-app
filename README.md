@@ -25,6 +25,7 @@ By centering the project around this hypothetical product, the approach provides
 * Application Programming Interfaces 
     * [JSON RPC](./docs/jsonrpc.md)
     * [Go ABI from Solidity](./docs/abi.md)
+    * [Contract Operations API](./docs/contractops.md)
 * [Design](./docs/design.md) - Description of the design of the product.
 * [Tools](./docs/tools.md) - Description of the tools to support the development of the project.
 
@@ -32,22 +33,21 @@ By centering the project around this hypothetical product, the approach provides
 
 The terms used in this project are based on the [official documentation](https://ethereum.org/en/developers/docs/).
 
+* Base fee. Every block has a base fee which acts as a reserve price. The base fee is calculated by a formula that compares the size of the previous block (the amount of gas used for all the transactions) with the target size. The base fee will increase by a maximum of 12.5% per block if the target block size is exceeded.
+
 * Geth client. The Geth client is the default client used in this project. Much of the development in this project is based on the [Geth source code](https://github.com/ethereum/go-ethereum).
+
+* Gas tip cap. This is the maximum price a user is willing to pay above the base price for a transaction to prioritize it. The effective gas tip is the actual tip paid above the base fee of the block.
+
+* Gas fees. These are transaction costs paid on the Ethereum blockchain to perform operations like sending Ether (ETH) or interacting with smart contracts. Gas fees are paid in `gwei`. Gas fees change based on supply and demand. When the network is congested, gas prices are higher, and when there is less traffic, they are lower.
+
+* Max fee. This optional parameter is known as the maxFeePerGas. For a transaction to be executed, the max fee must exceed the sum of the base fee and the tip.
 
 * Node. In this project, the Docker container is the default node.
 
-* Unit of Ether. The default unit of Ether is a Wei used in this project is the `Wei`.
+* Priority fee (tips). The priority fee (tip) incentivizes validators to include a transaction in the block. Small tips give validators a minimal incentive to include a transaction.
 
-| Unit	| Wei Equivalent | Description |
-| --- | --- | --- |
-| Wei | 10^0 = 1 wei | The smallest unit of Ether. |
-| Kwei (Babbage) | 10^3 = 1,000 wei | Thousand wei. |
-| Mwei (Lovelace) | 10^6 = 1,000,000 wei | Million wei. |
-| Gwei (Shannon) | 10^9 = 1,000,000,000 wei | Billion wei, often used for gas prices. |
-| Microether (Szabo) | 10^{12} = 1,000,000,000,000 wei | Trillion wei. |
-| Milliether (Finney) | 10^{15} = 1,000,000,000,000,000 wei | Quadrillion wei. |
-| Ether | 10^{18} = 1,000,000,000,000,000,000 wei | 1 Ether. |
-
+* Wei. This is the default unit of Ether used in all API implemented in this project.
 
 ## Disclaimer
 

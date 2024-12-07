@@ -65,6 +65,51 @@ var (
 	ErrMismatchResponse = errors.New("mismatch response error")
 )
 
+// Accounts return a list of accounts owned by the client
+func Accounts(url string, id uint) ([]string, error) {
+	return accounts(url, id)
+}
+
+// ErrUnmarshalAccounts error unmarshaling accout list
+var ErrUnmarshalAccounts = errors.New("umarshal accounts error")
+
+func accounts(url string, id uint) ([]string, error) {
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_accounts",
+		Params:  []any{},
+		ID:      id,
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return nil, ErrMismatchResponse
+	}
+
+	// Convert the block number from hex to decimal
+	var accts []string
+	if err := json.Unmarshal(rpcResp.Result, &accts); err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
+	}
+
+	return accts, nil
+}
+
 // BlockNumber returns the block number of the latest block
 func BlockNumber(url string, id uint) (*big.Int, error) {
 	return blockNumber(url, id)
@@ -232,7 +277,6 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 // SendRawTransaction
 // NOTE: Use this in cases where the signing is handled manually
 // and private key is not stored on the node
-// TO DO
 
 type AccessListArg struct {
 	Address     string   `json:"address"`
@@ -278,13 +322,13 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 }
 
 // SendTransaction returns a hash of the transaction.
-// NOTE: use this for cases where the private key is stored on the node.
+// NOTE: Use this for cases where the private key is stored on the node.
 //
 // Arguments:
 //
 //	url - to an ethereum json rpc endpoint
 //	id - an identifier to match request and response
-//	txn - transaction argument in object form
+//	txn - transaction of type TxnArg
 func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
 	// Convert struct to map[string]any
 	m, err := transformTxnArg(txn)
@@ -294,45 +338,16 @@ func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
 	return sendTransaction(url, id, m)
 }
 
-// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
-var ErrUnmarshalTxnHash = errors.New("transaction hash error")
-
-func sendTransaction(url string, id uint, txn map[string]any) (string, error) {
-
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_sendTransaction",
-		Params:  []any{txn},
-		ID:      id,
-	}
-
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrMarshalRequest, err)
-	}
-
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return "", ErrMismatchResponse
-	}
-
-	// Unmarshal txnHash
-	var txnHash string
-	if err := json.Unmarshal(rpcResp.Result, &txnHash); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUnmarshalTxnHash, err)
-	}
-	return txnHash, nil
+// SendRawTransaction returns a hash of the transaction
+// NOTE: Use this for cases where you sign transaction externally and
+//
+//	passed the signed the transaction.
+//
+// Arguments:
+//
+//	url - to an ethereum json rpc endpoint
+//	id - an identifier to match request and response
+//	txn - signed transaction hex in string
+func SendRawTransaction(url string, id uint, txn string) (string, error) {
+	return sendRawTransaction(url, id, txn)
 }

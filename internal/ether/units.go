@@ -1,6 +1,9 @@
-package ethconv
+package ether
 
-import "math/big"
+import (
+	"fmt"
+	"math/big"
+)
 
 const (
 	kwei          = int64(1_000)                     // wei
@@ -13,30 +16,41 @@ const (
 	etherGwei = int64(1_000_000_000) // gwei
 )
 
+// Gas is a unit of computation
+type Gas uint64
+
+func (g Gas) HexString() string {
+	return fmt.Sprintf("0x%x", g)
+}
+
 // Wei is the smallest unit of Ether
 type Wei int64
 
-// ToGwei returns Wei in big.Float
-func (w Wei) ToGwei() *big.Float {
+// ToGweiBF returns Wei in big.Float
+func (w Wei) ToGweiBF() *big.Float {
 	numerator := big.NewFloat(float64(w))
 	denominator := big.NewFloat(float64(gwei))
 	result := new(big.Float)
 	return result.Quo(numerator, denominator)
 }
 
-// ToEther returns Ether in big.Float
-func (w Wei) ToEther() *big.Float {
+// ToEtherBF returns Ether in big.Float
+func (w Wei) ToEtherBF() *big.Float {
 	convFactor := big.NewFloat(float64(etherWei))
 	numerator := big.NewFloat(float64(w))
 	result := new(big.Float)
 	return result.Quo(numerator, convFactor)
 }
 
+func (w Wei) HexString() string {
+	return fmt.Sprintf("0x%x", w)
+}
+
 // Gwei is 1,000,000,000 wei
 type Gwei float64
 
-// ToWei returns Wei in Big.Int and accuracy
-func (g Gwei) ToWei() (*big.Int, big.Accuracy) {
+// ToWeiBI returns Wei in Big.Int and accuracy
+func (g Gwei) ToWeiBI() (*big.Int, big.Accuracy) {
 	conversionFactor := big.NewFloat(float64(gwei))
 	multiplicant := big.NewFloat(float64(g))
 	result := new(big.Float)

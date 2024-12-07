@@ -1,20 +1,32 @@
-package ethconv
+package ether
 
 import "fmt"
 
+func Example_gas() {
+	g := Gas(26)
+	fmt.Println(g.HexString())
+
+	// Output:
+	// 0x1a
+}
+
 func Example_wei() {
 	w := Wei(1)
-	fmt.Println("ToGwei: ", w.ToGwei())
-	fmt.Println("ToEther: ", w.ToEther())
+	fmt.Println("ToGwei: ", w.ToGweiBF())
+	fmt.Println("ToEther: ", w.ToEtherBF())
+
+	w = Wei(26)
+	fmt.Println("HexString: ", w.HexString())
 
 	// Output:
 	// ToGwei:  1e-09
 	// ToEther:  1e-18
+	// HexString:  0x1a
 }
 
 func Example_gwei() {
 	g := Gwei(2.5)
-	fmt.Println(g.ToWei())
+	fmt.Println(g.ToWeiBI())
 	fmt.Println(g.ToEther())
 
 	// Output:

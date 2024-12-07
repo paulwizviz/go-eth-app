@@ -9,4 +9,4 @@
 // | Microether (Szabo)  | 10^{12} = 1,000,000,000,000 wei         | Trillion wei.                           |
 // | Milliether (Finney) | 10^{15} = 1,000,000,000,000,000 wei     | Quadrillion wei.                        |
 // | Ether               | 10^{18} = 1,000,000,000,000,000,000 wei | 1 Ether.                                |
-package ethconv
+package ether

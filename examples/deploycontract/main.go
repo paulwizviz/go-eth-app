@@ -1,17 +1,32 @@
 package main
 
 import (
-	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"paulwizviz/go-eth-app/internal/contract"
+	"paulwizviz/go-eth-app/internal/jrpc"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 func main() {
+
+	// Get random dev account
+	url := "http://localhost:8545"
+	accts, err := jrpc.Accounts(url, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(accts)
+
+	bal, err := jrpc.GetBalance(url, 1, accts[0], jrpc.BlockTagLATEST)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(bal)
 
 	// Private key from prefunded account
 	privateKey, err := crypto.HexToECDSA("4c0883a69102937d6231471b5dbb6204fe512961708279a8911b138d9d808759")
@@ -24,6 +39,21 @@ func main() {
 	address := crypto.PubkeyToAddress(pubkey).Hex()
 	fmt.Println(address)
 
+	// Transfer ether from dev to address
+	txn1 := jrpc.TxnArg{
+		To:       address,
+		From:     accts[0],
+		Value:    "0x16345785d8a0000",
+		Gas:      "0x5208",     // 21000
+		GasPrice: "0x3b9aca00", // 1,000,000,000
+	}
+
+	txnHash, err := jrpc.SendTransaction(url, 1, txn1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Txn Hash: ", txnHash)
+
 	pwd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -33,19 +63,41 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Connect to Geth local node
-	client, err := ethclient.Dial("http://localhost:8545")
+	fmt.Println(content)
+
+	nonce, err := jrpc.GetTxnCount(url, 1, address, jrpc.BlockTagPENDING)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to Geth local node")
+	fmt.Println("nonce", nonce)
 
-	// Deploy contract
-	gasLimit := uint64(138_612)
-	addr, err := contract.DeployContract(context.Background(), client, privateKey, 1_000_000_000, 1_000_000_000, gasLimit, content)
+	gasPrice, err := jrpc.GasPrice(url, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Contract Address: ", addr)
+	fmt.Println("Gas price: ", gasPrice)
 
+	chainID, err := jrpc.NetworkID(url, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("chainid ", chainID)
+
+	txn2 := contract.CreateContractEIP1559Txn(chainID.Int64(), uint64(nonce.Int64()), big.NewInt(1_000_000_000), gasPrice, 97590, []byte(content))
+	signedTxn, err := contract.SignTransaction(txn2, uint64(chainID.Int64()), privateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	b, err := signedTxn.MarshalBinary()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := fmt.Sprintf("0x%v", hex.EncodeToString(b))
+
+	_, err = jrpc.SendRawTransaction(url, 1, s)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

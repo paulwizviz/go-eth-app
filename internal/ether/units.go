@@ -1,7 +1,24 @@
+// Copyright 2024 The Contributors to go-eth-app
+// This file is part of the go-eth-app project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
+//
+// For a list of contributors, refer to the CONTRIBUTORS file or the
+// repository's commit history.
+
 package ether
 
 import (
-	"fmt"
 	"math/big"
 )
 
@@ -18,10 +35,6 @@ const (
 
 // Gas is a unit of computation
 type Gas uint64
-
-func (g Gas) HexString() string {
-	return fmt.Sprintf("0x%x", g)
-}
 
 // Wei is the smallest unit of Ether
 type Wei int64
@@ -40,10 +53,6 @@ func (w Wei) ToEtherBF() *big.Float {
 	numerator := big.NewFloat(float64(w))
 	result := new(big.Float)
 	return result.Quo(numerator, convFactor)
-}
-
-func (w Wei) HexString() string {
-	return fmt.Sprintf("0x%x", w)
 }
 
 // Gwei is 1,000,000,000 wei
@@ -66,17 +75,18 @@ func (g Gwei) ToEther() *big.Float {
 }
 
 // Ether is 1,000,000,000,000,000,000 wei
+// or 1,000,000,000 gwei
 type Ether float64
 
-// ToWei returns wei in big.Int and accuracy in big.Accuracy
-func (e Ether) ToWei() (*big.Int, big.Accuracy) {
+// ToWeiBI returns wei in big.Int and accuracy in big.Accuracy
+func (e Ether) ToWeiBI() (*big.Int, big.Accuracy) {
 	conversionFactor := big.NewFloat(float64(etherWei))
 	multiplicant := big.NewFloat(float64(e))
 	return new(big.Float).Mul(multiplicant, conversionFactor).Int(nil)
 }
 
-// ToGwei returns gwei in big.Int and accuracy in big.Accuracy
-func (e Ether) ToGwei() (*big.Int, big.Accuracy) {
+// ToGweiBI returns gwei in big.Int and accuracy in big.Accuracy
+func (e Ether) ToGweiBI() (*big.Int, big.Accuracy) {
 	conversionFactor := big.NewFloat(float64(etherGwei))
 	multiplicant := big.NewFloat(float64(e))
 	return new(big.Float).Mul(multiplicant, conversionFactor).Int(nil)

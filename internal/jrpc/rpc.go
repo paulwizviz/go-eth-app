@@ -74,25 +74,31 @@ const (
 
 var (
 	// ErrMarshalRequest error marshaling JSON-RPC request
-	ErrMarshalRequest = errors.New("marshal request error")
+	ErrMarshalRequest = errors.New("marshal request")
 	// ErrSendingRequest error posting JSON-RPC request
-	ErrSendingRequest = errors.New("sending request error")
+	ErrSendingRequest = errors.New("sending request")
 	// ErrUmarshalResponse error unmarshaling JSON-RPC response
-	ErrUmarshalResponse = errors.New("unmarshal respond error")
+	ErrUmarshalResponse = errors.New("unmarshal respond")
 	// ErrMismatchResponse error mismatch JSON-RPC request
-	ErrMismatchResponse = errors.New("mismatch response error")
+	ErrMismatchResponse = errors.New("mismatch response")
 	// ErrUnmarshalAccounts error unmarshaling accout list
-	ErrUnmarshalAccounts = errors.New("umarshal accounts error")
+	ErrUnmarshalAccounts = errors.New("umarshal accounts")
 	// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
-	ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
+	ErrUnmarshalBlockNumber = errors.New("unmarshal block number")
 	// ErrUnmarshalBlock error unmarsaling block data from response
-	ErrUnmarshalBlock = errors.New("unmarshal block error")
+	ErrUnmarshalBlock = errors.New("unmarshal block")
 	// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
-	ErrUnmarshalBalance = errors.New("balance error")
+	ErrUnmarshalBalance = errors.New("umarshal balance")
 	// ErrTransformTxnArg error transforming TxnArg to map[string]any
-	ErrTransformTxnArg = errors.New("transform txn argument error")
+	ErrTransformTxnArg = errors.New("transform txn argument")
 	// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
-	ErrUnmarshalTxnHash = errors.New("transaction hash error")
+	ErrUnmarshalTxnHash = errors.New("unmarshal transaction hash")
+	// ErrUnmarshalNetworkID error unmarshaling networkID
+	ErrUnmarshalNetworkID = errors.New("unmarhsal network id")
+	// ErrUnmarshalGasPrice error unmarshaling gas price
+	ErrUnmarshalGasPrice = errors.New("unmarshal gas price")
+	// ErrUnmarshalTxnCount error unmarshaling txn count
+	ErrUnmarshalTxnCount = errors.New("unmarshal txn count")
 )
 
 // Accounts return a list of accounts owned by the client
@@ -182,6 +188,52 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 	blockNumber.SetString(blkNum[2:], 16) // Remove Ox prefix
 
 	return blockNumber, nil
+}
+
+// GasPrice return suggested gas price in int64 (wei)
+func GasPrice(url string, id uint) (*big.Int, error) {
+	return gasPrice(url, id)
+}
+
+func gasPrice(url string, id uint) (*big.Int, error) {
+
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_gasPrice",
+		Params:  []any{},
+		ID:      id,
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return big.NewInt(-1), ErrMismatchResponse
+	}
+
+	// Convert the block number from hex to decimal
+	var netID string
+	if err := json.Unmarshal(rpcResp.Result, &netID); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
+	}
+
+	networkID := new(big.Int)
+	networkID.SetString(netID[2:], 16)
+
+	return networkID, nil
 }
 
 // GetBlockByNumber returns a block type
@@ -290,6 +342,107 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 	}
 
 	return balance, nil
+}
+
+// GetTxnCount returns the nonce in big.Int depending on status
+//
+// Arguments:
+//
+//	url - to an ethereum json rpc endpoint
+//	id - an identifier to match request and response
+//	address - of the account
+//	block - Block number or Block tag
+//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
+//		Block tag: See constants
+func GetTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
+	return getTxnCount(url, id, address, block)
+}
+
+func getTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_getBalance",
+		Params:  []any{address, block},
+		ID:      id,
+	}
+
+	// Marshal the request to JSON
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	// Send the request
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	// Decode the response
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return big.NewInt(-1), ErrMismatchResponse
+	}
+
+	// Unmarshal count
+	var count string
+	if err := json.Unmarshal(rpcResp.Result, &count); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalTxnCount, err)
+	}
+
+	ct := new(big.Int)
+	ct.SetString(count[2:], 16)
+	return ct, nil
+}
+
+// NetworkID returns the ID in int64
+func NetworkID(url string, id uint) (*big.Int, error) {
+	return networkID(url, id)
+}
+
+func networkID(url string, id uint) (*big.Int, error) {
+
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "net_version",
+		Params:  []any{},
+		ID:      id,
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return big.NewInt(-1), ErrMismatchResponse
+	}
+
+	// Convert the block number from hex to decimal
+	var networkID string
+	if err := json.Unmarshal(rpcResp.Result, &networkID); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
+	}
+
+	netID := new(big.Int)
+	netID.SetString(networkID, 10)
+	return netID, nil
 }
 
 // SendRawTransaction

@@ -1,3 +1,21 @@
+// Copyright 2024 The Contributors to go-eth-app
+// This file is part of the go-eth-app project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
+//
+// For a list of contributors, refer to the CONTRIBUTORS file or the
+// repository's commit history.
+
 package jrpc
 
 import (
@@ -63,15 +81,24 @@ var (
 	ErrUmarshalResponse = errors.New("unmarshal respond error")
 	// ErrMismatchResponse error mismatch JSON-RPC request
 	ErrMismatchResponse = errors.New("mismatch response error")
+	// ErrUnmarshalAccounts error unmarshaling accout list
+	ErrUnmarshalAccounts = errors.New("umarshal accounts error")
+	// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
+	ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
+	// ErrUnmarshalBlock error unmarsaling block data from response
+	ErrUnmarshalBlock = errors.New("unmarshal block error")
+	// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
+	ErrUnmarshalBalance = errors.New("balance error")
+	// ErrTransformTxnArg error transforming TxnArg to map[string]any
+	ErrTransformTxnArg = errors.New("transform txn argument error")
+	// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
+	ErrUnmarshalTxnHash = errors.New("transaction hash error")
 )
 
 // Accounts return a list of accounts owned by the client
 func Accounts(url string, id uint) ([]string, error) {
 	return accounts(url, id)
 }
-
-// ErrUnmarshalAccounts error unmarshaling accout list
-var ErrUnmarshalAccounts = errors.New("umarshal accounts error")
 
 func accounts(url string, id uint) ([]string, error) {
 	req := request{
@@ -114,9 +141,6 @@ func accounts(url string, id uint) ([]string, error) {
 func BlockNumber(url string, id uint) (*big.Int, error) {
 	return blockNumber(url, id)
 }
-
-// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
-var ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
 
 func blockNumber(url string, id uint) (*big.Int, error) {
 
@@ -174,9 +198,6 @@ func GetBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 	return getBlockByNumber(url, id, block, hydrated)
 }
 
-// ErrUnmarshalBlock error unmarsaling block data from response
-var ErrUnmarshalBlock = errors.New("unmarshal block error")
-
 func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, error) {
 	req := request{
 		JsonRPC: rpcVersion,
@@ -230,9 +251,6 @@ func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 func GetBalance(url string, id uint, address string, block string) (string, error) {
 	return getBalance(url, id, address, block)
 }
-
-// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
-var ErrUnmarshalBalance = errors.New("balance error")
 
 func getBalance(url string, id uint, address string, block string) (string, error) {
 	req := request{
@@ -301,9 +319,6 @@ type TxnArg struct {
 	Blobs                []string        `json:"blobs,omitempty"`
 	ChainID              string          `json:"chainId,omitempty"`
 }
-
-// ErrTransformTxnArg error transforming TxnArg to map[string]any
-var ErrTransformTxnArg = errors.New("transform txn argument error")
 
 func transformTxnArg(txn TxnArg) (map[string]any, error) {
 

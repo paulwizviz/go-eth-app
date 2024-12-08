@@ -16,17 +16,36 @@
 // For a list of contributors, refer to the CONTRIBUTORS file or the
 // repository's commit history.
 
-package jrpc
+package ether
 
-import (
-	"fmt"
-	"math/big"
-)
+import "fmt"
 
-func BigIntToHexString(num *big.Int) string {
-	return fmt.Sprintf("0x%x", num)
+func Example_wei() {
+	w := Wei(1)
+	fmt.Println("ToGwei: ", w.ToGweiBF())
+	fmt.Println("ToEther: ", w.ToEtherBF())
+
+	// Output:
+	// ToGwei:  1e-09
+	// ToEther:  1e-18
 }
 
-func IntToHexString[T int | *big.Int](num T) string {
-	return fmt.Sprintf("0x%x", num)
+func Example_gwei() {
+	g := Gwei(2.5)
+	fmt.Println(g.ToWeiBI())
+	fmt.Println(g.ToEther())
+
+	// Output:
+	// 2500000000 Exact
+	// 2.5e-09
+}
+
+func Example_ether() {
+	e := Ether(2.5)
+	fmt.Println(e.ToWeiBI())
+	fmt.Println(e.ToGweiBI())
+
+	// Output:
+	// 2500000000000000000 Exact
+	// 2500000000 Exact
 }

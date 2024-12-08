@@ -1,3 +1,21 @@
+// Copyright 2024 The Contributors to go-eth-app
+// This file is part of the go-eth-app project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
+//
+// For a list of contributors, refer to the CONTRIBUTORS file or the
+// repository's commit history.
+
 package jrpc
 
 import (
@@ -56,17 +74,74 @@ const (
 
 var (
 	// ErrMarshalRequest error marshaling JSON-RPC request
-	ErrMarshalRequest = errors.New("marshal request error")
+	ErrMarshalRequest = errors.New("marshal request")
 	// ErrSendingRequest error posting JSON-RPC request
-	ErrSendingRequest = errors.New("sending request error")
+	ErrSendingRequest = errors.New("sending request")
 	// ErrUmarshalResponse error unmarshaling JSON-RPC response
-	ErrUmarshalResponse = errors.New("unmarshal respond error")
+	ErrUmarshalResponse = errors.New("unmarshal respond")
 	// ErrMismatchResponse error mismatch JSON-RPC request
-	ErrMismatchResponse = errors.New("mismatch response error")
+	ErrMismatchResponse = errors.New("mismatch response")
+	// ErrUnmarshalAccounts error unmarshaling accout list
+	ErrUnmarshalAccounts = errors.New("umarshal accounts")
+	// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
+	ErrUnmarshalBlockNumber = errors.New("unmarshal block number")
+	// ErrUnmarshalBlock error unmarsaling block data from response
+	ErrUnmarshalBlock = errors.New("unmarshal block")
+	// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
+	ErrUnmarshalBalance = errors.New("umarshal balance")
+	// ErrTransformTxnArg error transforming TxnArg to map[string]any
+	ErrTransformTxnArg = errors.New("transform txn argument")
+	// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
+	ErrUnmarshalTxnHash = errors.New("unmarshal transaction hash")
+	// ErrUnmarshalNetworkID error unmarshaling networkID
+	ErrUnmarshalNetworkID = errors.New("unmarhsal network id")
+	// ErrUnmarshalGasPrice error unmarshaling gas price
+	ErrUnmarshalGasPrice = errors.New("unmarshal gas price")
+	// ErrUnmarshalTxnCount error unmarshaling txn count
+	ErrUnmarshalTxnCount = errors.New("unmarshal txn count")
 )
 
-// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
-var ErrUnmarshalBlockNumber = errors.New("unmarshal block number error")
+// Accounts return a list of accounts owned by the client
+func Accounts(url string, id uint) ([]string, error) {
+	return accounts(url, id)
+}
+
+func accounts(url string, id uint) ([]string, error) {
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_accounts",
+		Params:  []any{},
+		ID:      id,
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return nil, ErrMismatchResponse
+	}
+
+	// Convert the block number from hex to decimal
+	var accts []string
+	if err := json.Unmarshal(rpcResp.Result, &accts); err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
+	}
+
+	return accts, nil
+}
 
 // BlockNumber returns the block number of the latest block
 func BlockNumber(url string, id uint) (*big.Int, error) {
@@ -115,8 +190,51 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 	return blockNumber, nil
 }
 
-// ErrUnmarshalBlock error unmarsaling block data from response
-var ErrUnmarshalBlock = errors.New("unmarshal block error")
+// GasPrice return suggested gas price in int64 (wei)
+func GasPrice(url string, id uint) (*big.Int, error) {
+	return gasPrice(url, id)
+}
+
+func gasPrice(url string, id uint) (*big.Int, error) {
+
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_gasPrice",
+		Params:  []any{},
+		ID:      id,
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return big.NewInt(-1), ErrMismatchResponse
+	}
+
+	// Convert the block number from hex to decimal
+	var netID string
+	if err := json.Unmarshal(rpcResp.Result, &netID); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
+	}
+
+	networkID := new(big.Int)
+	networkID.SetString(netID[2:], 16)
+
+	return networkID, nil
+}
 
 // GetBlockByNumber returns a block type
 //
@@ -172,9 +290,6 @@ func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 	return blk, nil
 }
 
-// ErrUnmarshalBalance error unmarshling balance from JSON-RPC response
-var ErrUnmarshalBalance = errors.New("balance error")
-
 // GetBalance returns the balance for a given address and block
 //
 // Arguments:
@@ -229,13 +344,115 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 	return balance, nil
 }
 
+// GetTxnCount returns the nonce in big.Int depending on status
+//
+// Arguments:
+//
+//	url - to an ethereum json rpc endpoint
+//	id - an identifier to match request and response
+//	address - of the account
+//	block - Block number or Block tag
+//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
+//		Block tag: See constants
+func GetTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
+	return getTxnCount(url, id, address, block)
+}
+
+func getTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "eth_getBalance",
+		Params:  []any{address, block},
+		ID:      id,
+	}
+
+	// Marshal the request to JSON
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	// Send the request
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	// Decode the response
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return big.NewInt(-1), ErrMismatchResponse
+	}
+
+	// Unmarshal count
+	var count string
+	if err := json.Unmarshal(rpcResp.Result, &count); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalTxnCount, err)
+	}
+
+	ct := new(big.Int)
+	ct.SetString(count[2:], 16)
+	return ct, nil
+}
+
+// NetworkID returns the ID in int64
+func NetworkID(url string, id uint) (*big.Int, error) {
+	return networkID(url, id)
+}
+
+func networkID(url string, id uint) (*big.Int, error) {
+
+	req := request{
+		JsonRPC: rpcVersion,
+		Method:  "net_version",
+		Params:  []any{},
+		ID:      id,
+	}
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+	}
+
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+	}
+	defer resp.Body.Close()
+
+	var rpcResp response
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+
+	if req.ID != rpcResp.ID {
+		return big.NewInt(-1), ErrMismatchResponse
+	}
+
+	// Convert the block number from hex to decimal
+	var networkID string
+	if err := json.Unmarshal(rpcResp.Result, &networkID); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
+	}
+
+	netID := new(big.Int)
+	netID.SetString(networkID, 10)
+	return netID, nil
+}
+
+// SendRawTransaction
+// NOTE: Use this in cases where the signing is handled manually
+// and private key is not stored on the node
+
 type AccessListArg struct {
 	Address     string   `json:"address"`
 	StorageKeys []string `json:"storageKeys"`
 }
-
-// ErrTransformTxnArg error transforming TxnArg to map[string]any
-var ErrTransformTxnArg = errors.New("transform txn argument error")
 
 // TxnArg argument for send transaction call
 type TxnArg struct {
@@ -272,16 +489,14 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 	return m, nil
 }
 
-// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
-var ErrUnmarshalTxnHash = errors.New("transaction hash error")
-
-// SendTransaction returns a hash of the transaction
+// SendTransaction returns a hash of the transaction.
+// NOTE: Use this for cases where the private key is stored on the node.
 //
 // Arguments:
 //
 //	url - to an ethereum json rpc endpoint
 //	id - an identifier to match request and response
-//	txn - transaction argument in object form
+//	txn - transaction of type TxnArg
 func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
 	// Convert struct to map[string]any
 	m, err := transformTxnArg(txn)
@@ -291,42 +506,16 @@ func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
 	return sendTransaction(url, id, m)
 }
 
-func sendTransaction(url string, id uint, txn map[string]any) (string, error) {
-
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_sendTransaction",
-		Params:  []any{txn},
-		ID:      id,
-	}
-
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrMarshalRequest, err)
-	}
-
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return "", ErrMismatchResponse
-	}
-
-	// Unmarshal txnHash
-	var txnHash string
-	if err := json.Unmarshal(rpcResp.Result, &txnHash); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUnmarshalTxnHash, err)
-	}
-	return txnHash, nil
+// SendRawTransaction returns a hash of the transaction
+// NOTE: Use this for cases where you sign transaction externally and
+//
+//	passed the signed the transaction.
+//
+// Arguments:
+//
+//	url - to an ethereum json rpc endpoint
+//	id - an identifier to match request and response
+//	txn - signed transaction hex in string
+func SendRawTransaction(url string, id uint, txn string) (string, error) {
+	return sendRawTransaction(url, id, txn)
 }

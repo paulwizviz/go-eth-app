@@ -20,6 +20,7 @@ package jrpc
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,6 +74,8 @@ const (
 )
 
 var (
+	// ErrContextCancelRPC context initated a cancel
+	ErrContextCancelRPC = errors.New("context cancel called")
 	// ErrMarshalRequest error marshaling JSON-RPC request
 	ErrMarshalRequest = errors.New("marshal request")
 	// ErrSendingRequest error posting JSON-RPC request
@@ -102,8 +105,13 @@ var (
 )
 
 // Accounts return a list of accounts owned by the client
-func Accounts(url string, id uint) ([]string, error) {
-	return accounts(url, id)
+func Accounts(ctx context.Context, url string, id uint) ([]string, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ErrContextCancelRPC
+	default:
+		return accounts(url, id)
+	}
 }
 
 func accounts(url string, id uint) ([]string, error) {
@@ -144,8 +152,13 @@ func accounts(url string, id uint) ([]string, error) {
 }
 
 // BlockNumber returns the block number of the latest block
-func BlockNumber(url string, id uint) (*big.Int, error) {
-	return blockNumber(url, id)
+func BlockNumber(ctx context.Context, url string, id uint) (*big.Int, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ErrContextCancelRPC
+	default:
+		return blockNumber(url, id)
+	}
 }
 
 func blockNumber(url string, id uint) (*big.Int, error) {
@@ -191,8 +204,13 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 }
 
 // GasPrice return suggested gas price in int64 (wei)
-func GasPrice(url string, id uint) (*big.Int, error) {
-	return gasPrice(url, id)
+func GasPrice(ctx context.Context, url string, id uint) (*big.Int, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ErrContextCancelRPC
+	default:
+		return gasPrice(url, id)
+	}
 }
 
 func gasPrice(url string, id uint) (*big.Int, error) {
@@ -246,8 +264,13 @@ func gasPrice(url string, id uint) (*big.Int, error) {
 //		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 //		Block tag: See constants
 //	hydrated - true or false
-func GetBlockByNumber(url string, id uint, block string, hydrated bool) (Block, error) {
-	return getBlockByNumber(url, id, block, hydrated)
+func GetBlockByNumber(ctx context.Context, url string, id uint, block string, hydrated bool) (Block, error) {
+	select {
+	case <-ctx.Done():
+		return Block{}, ErrContextCancelRPC
+	default:
+		return getBlockByNumber(url, id, block, hydrated)
+	}
 }
 
 func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, error) {
@@ -300,8 +323,13 @@ func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 //	block - Block number or Block tag
 //		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 //		Block tag: See constants
-func GetBalance(url string, id uint, address string, block string) (string, error) {
-	return getBalance(url, id, address, block)
+func GetBalance(ctx context.Context, url string, id uint, address string, block string) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ErrContextCancelRPC
+	default:
+		return getBalance(url, id, address, block)
+	}
 }
 
 func getBalance(url string, id uint, address string, block string) (string, error) {
@@ -354,8 +382,13 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 //	block - Block number or Block tag
 //		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 //		Block tag: See constants
-func GetTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
-	return getTxnCount(url, id, address, block)
+func GetTxnCount(ctx context.Context, url string, id uint, address string, block string) (*big.Int, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ErrContextCancelRPC
+	default:
+		return getTxnCount(url, id, address, block)
+	}
 }
 
 func getTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
@@ -401,8 +434,13 @@ func getTxnCount(url string, id uint, address string, block string) (*big.Int, e
 }
 
 // NetworkID returns the ID in int64
-func NetworkID(url string, id uint) (*big.Int, error) {
-	return networkID(url, id)
+func NetworkID(ctx context.Context, url string, id uint) (*big.Int, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ErrContextCancelRPC
+	default:
+		return networkID(url, id)
+	}
 }
 
 func networkID(url string, id uint) (*big.Int, error) {
@@ -497,13 +535,18 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 //	url - to an ethereum json rpc endpoint
 //	id - an identifier to match request and response
 //	txn - transaction of type TxnArg
-func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
-	// Convert struct to map[string]any
-	m, err := transformTxnArg(txn)
-	if err != nil {
-		return "", err
+func SendTransaction(ctx context.Context, url string, id uint, txn TxnArg) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ErrContextCancelRPC
+	default:
+		// Convert struct to map[string]any
+		m, err := transformTxnArg(txn)
+		if err != nil {
+			return "", err
+		}
+		return sendTransaction(url, id, m)
 	}
-	return sendTransaction(url, id, m)
 }
 
 // SendRawTransaction returns a hash of the transaction
@@ -516,6 +559,11 @@ func SendTransaction(url string, id uint, txn TxnArg) (string, error) {
 //	url - to an ethereum json rpc endpoint
 //	id - an identifier to match request and response
 //	txn - signed transaction hex in string
-func SendRawTransaction(url string, id uint, txn string) (string, error) {
-	return sendRawTransaction(url, id, txn)
+func SendRawTransaction(ctx context.Context, url string, id uint, txn string) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ErrContextCancelRPC
+	default:
+		return sendRawTransaction(url, id, txn)
+	}
 }

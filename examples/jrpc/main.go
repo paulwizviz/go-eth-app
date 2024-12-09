@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"paulwizviz/go-eth-app/internal/jrpc"
@@ -8,7 +9,7 @@ import (
 
 func main() {
 	url := "https://ethereum-rpc.publicnode.com"
-	blknum, err := jrpc.BlockNumber(url, 1)
+	blknum, err := jrpc.BlockNumber(context.TODO(), url, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -16,7 +17,7 @@ func main() {
 	fmt.Println(blknum)
 	fmt.Println(jrpc.BigIntToHexString(blknum))
 
-	block, err := jrpc.GetBlockByNumber(url, 1, "latest", true)
+	block, err := jrpc.GetBlockByNumber(context.TODO(), url, 1, "latest", true)
 	if err != nil {
 		log.Fatal(err)
 	}

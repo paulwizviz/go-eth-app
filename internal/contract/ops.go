@@ -22,7 +22,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 
@@ -78,81 +77,9 @@ func SignTransaction(txn *types.Transaction, chainID uint64, privkey *ecdsa.Priv
 }
 
 func signTransaction(txn *types.Transaction, chainID uint64, privkey *ecdsa.PrivateKey) (*types.Transaction, error) {
-	log.Println("--->", chainID)
 	signedTx, err := types.SignTx(txn, types.LatestSignerForChainID(big.NewInt(int64(chainID))), privkey)
 	if err != nil {
 		return nil, fmt.Errorf("%w-%v", ErrSignTxn, err)
 	}
 	return signedTx, nil
 }
-
-// DeployContract is an operation to deploy contract
-// func DeployContract(ctx context.Context,
-// 	client *ethclient.Client,
-// 	privKey *ecdsa.PrivateKey,
-// 	gasTip ether.Wei,
-// 	gasLimit ether.Gas,
-// 	compiledContract string) (common.Address, error) {
-// 	return deployContract(ctx, client, privKey, int64(gasTip), uint64(gasLimit), compiledContract)
-// }
-
-// func deployContract(ctx context.Context,
-// 	client *ethclient.Client,
-// 	privKey *ecdsa.PrivateKey,
-// 	gasTip int64,
-// 	gasLimit uint64,
-// 	compiledContract string) (common.Address, error) {
-
-// 	publicKey := privKey.PublicKey
-// 	fromAddress := crypto.PubkeyToAddress(publicKey)
-
-// 	nonce, err := client.PendingNonceAt(ctx, fromAddress)
-// 	if err != nil {
-// 		return common.Address{}, fmt.Errorf("%w-%v", ErrUnableToGetPendingNonce, err)
-// 	}
-
-// 	gasPrice, err := client.SuggestGasPrice(ctx)
-// 	if err != nil {
-// 		return common.Address{}, fmt.Errorf("%w-%v", ErrUnableToGetSuggestedGasPrice, err)
-// 	}
-
-// 	contractBytes, err := hex.DecodeString(compiledContract)
-// 	if err != nil {
-// 		return common.Address{}, fmt.Errorf("%w-%v", ErrUnableToConvertContractToHex, err)
-// 	}
-
-// 	// Retrieve the ID of the network to which the client is connected
-// 	chainID, err := client.NetworkID(ctx)
-// 	if err != nil {
-// 		return common.Address{}, fmt.Errorf("%w-%v", ErrUnableToGetNetworkID, err)
-// 	}
-
-// 	// Smart contract bytecode and ABI (compiled using solc or Remix IDE)
-// 	txData := &types.DynamicFeeTx{
-// 		ChainID:   chainID, // Chain ID for the network
-// 		Nonce:     nonce,
-// 		GasTipCap: big.NewInt(gasTip),                             // Tip
-// 		GasFeeCap: new(big.Int).Add(gasPrice, big.NewInt(gasTip)), // Base fee + tip
-// 		Gas:       gasLimit,
-// 		To:        nil,           // `To` is nil for contract deployment
-// 		Value:     big.NewInt(0), // Value sent with the transaction
-// 		Data:      contractBytes, // Contract bytecode
-// 	}
-
-// 	tx := types.NewTx(txData)
-
-// 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privKey)
-// 	if err != nil {
-// 		return common.Address{}, fmt.Errorf("%w-%v", ErrUnableToSignTxn, err)
-// 	}
-
-// 	err = client.SendTransaction(ctx, signedTx)
-// 	if err != nil {
-// 		return common.Address{}, fmt.Errorf("%w-%v", ErrUnableToSendTxn, err)
-// 	}
-
-// 	// Get contract address
-// 	contractAddress := crypto.CreateAddress(fromAddress, nonce)
-
-// 	return contractAddress, nil
-// }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"paulwizviz/go-eth-app/internal/jrpc"
@@ -18,13 +19,13 @@ func main() {
 		GasPrice: "0x3b9aca00",
 	}
 
-	result, err := jrpc.SendTransaction(url, 1, t)
+	result, err := jrpc.SendTransaction(context.TODO(), url, 1, t)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(result)
 
-	bal, err := jrpc.GetBalance(url, 1, addr, jrpc.BlockTagLATEST)
+	bal, err := jrpc.GetBalance(context.TODO(), url, 1, addr, jrpc.BlockTagLATEST)
 	if err != nil {
 		log.Fatal(err)
 	}

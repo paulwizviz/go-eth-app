@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -16,13 +17,14 @@ func main() {
 
 	// Get random dev account
 	url := "http://localhost:8545"
-	accts, err := jrpc.Accounts(url, 1)
+
+	accts, err := jrpc.Accounts(context.TODO(), url, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(accts)
 
-	bal, err := jrpc.GetBalance(url, 1, accts[0], jrpc.BlockTagLATEST)
+	bal, err := jrpc.GetBalance(context.TODO(), url, 1, accts[0], jrpc.BlockTagLATEST)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +50,7 @@ func main() {
 		GasPrice: "0x3b9aca00", // 1,000,000,000
 	}
 
-	txnHash, err := jrpc.SendTransaction(url, 1, txn1)
+	txnHash, err := jrpc.SendTransaction(context.TODO(), url, 1, txn1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,19 +67,19 @@ func main() {
 	}
 	fmt.Println(content)
 
-	nonce, err := jrpc.GetTxnCount(url, 1, address, jrpc.BlockTagPENDING)
+	nonce, err := jrpc.GetTxnCount(context.TODO(), url, 1, address, jrpc.BlockTagPENDING)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("nonce", nonce)
 
-	gasPrice, err := jrpc.GasPrice(url, 1)
+	gasPrice, err := jrpc.GasPrice(context.TODO(), url, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Gas price: ", gasPrice)
 
-	chainID, err := jrpc.NetworkID(url, 1)
+	chainID, err := jrpc.NetworkID(context.TODO(), url, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,8 +98,9 @@ func main() {
 
 	s := fmt.Sprintf("0x%v", hex.EncodeToString(b))
 
-	_, err = jrpc.SendRawTransaction(url, 1, s)
+	txnHash, err = jrpc.SendRawTransaction(context.TODO(), url, 1, s)
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(txnHash)
 }

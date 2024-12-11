@@ -483,10 +483,6 @@ func networkID(url string, id uint) (*big.Int, error) {
 	return netID, nil
 }
 
-// SendRawTransaction
-// NOTE: Use this in cases where the signing is handled manually
-// and private key is not stored on the node
-
 type AccessListArg struct {
 	Address     string   `json:"address"`
 	StorageKeys []string `json:"storageKeys"`

@@ -26,25 +26,8 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"time"
 )
-
-const (
-	rpcVersion  = "2.0"
-	contentType = "application/json"
-)
-
-type request struct {
-	JsonRPC string `json:"jsonrpc"`
-	Method  string `json:"method"`
-	Params  any    `json:"params"`
-	ID      uint   `json:"id"`
-}
-
-type response struct {
-	JsonRPC string          `json:"jsonrpc"`
-	ID      uint            `json:"id"`
-	Result  json.RawMessage `json:"result"`
-}
 
 const (
 
@@ -78,6 +61,8 @@ var (
 	ErrContextCancelRPC = errors.New("context cancel called")
 	// ErrMarshalRequest error marshaling JSON-RPC request
 	ErrMarshalRequest = errors.New("marshal request")
+	// ErrFormRequest error forming request error
+	ErrFormRequest = errors.New("unable to form request")
 	// ErrSendingRequest error posting JSON-RPC request
 	ErrSendingRequest = errors.New("sending request")
 	// ErrUmarshalResponse error unmarshaling JSON-RPC response
@@ -94,100 +79,117 @@ var (
 	ErrUnmarshalBalance = errors.New("umarshal balance")
 	// ErrTransformTxnArg error transforming TxnArg to map[string]any
 	ErrTransformTxnArg = errors.New("transform txn argument")
-	// ErrUnmarshalTxnHash error unmarshaling transaction hash from JSON-RPC response
-	ErrUnmarshalTxnHash = errors.New("unmarshal transaction hash")
+	// ErrUnmarshalTxnHash error unable to get count
+	ErrUnmarshalTxnHash = errors.New("unable to get transaction count")
 	// ErrUnmarshalNetworkID error unmarshaling networkID
 	ErrUnmarshalNetworkID = errors.New("unmarhsal network id")
 	// ErrUnmarshalGasPrice error unmarshaling gas price
 	ErrUnmarshalGasPrice = errors.New("unmarshal gas price")
-	// ErrUnmarshalTxnCount error unmarshaling txn count
-	ErrUnmarshalTxnCount = errors.New("unmarshal txn count")
+	// ErrTxnCount error unmarshaling txn count
+	ErrTxnCount = errors.New("unable to get txn count")
 )
 
-// Accounts return a list of accounts owned by the client
-func Accounts(ctx context.Context, url string, id uint) ([]string, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ErrContextCancelRPC
-	default:
-		return accounts(url, id)
-	}
+const (
+	rpcVersion  = "2.0"
+	contentType = "application/json"
+)
+
+type request struct {
+	JsonRPC string `json:"jsonrpc"`
+	Method  string `json:"method"`
+	Params  any    `json:"params"`
+	ID      uint   `json:"id"`
 }
 
-func accounts(url string, id uint) ([]string, error) {
+func generateRequestBody(reqID uint, method string, params []any) ([]byte, error) {
 	req := request{
 		JsonRPC: rpcVersion,
-		Method:  "eth_accounts",
-		Params:  []any{},
-		ID:      id,
+		ID:      reqID,
+		Method:  method,
+		Params:  params,
 	}
-
-	reqBody, err := json.Marshal(req)
+	b, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
 	}
+	return b, nil
+}
 
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+type response struct {
+	JsonRPC string          `json:"jsonrpc"`
+	ID      uint            `json:"id"`
+	Result  json.RawMessage `json:"result"`
+}
+
+func postRPC(ctx context.Context, timeout time.Duration, url string, reqID uint, reqBody []byte) (response, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrSendingRequest, err)
+		return response{}, fmt.Errorf("%w-%v", ErrFormRequest, err)
+	}
+	request.Header.Add("Content-Type", contentType)
+	req := request.WithContext(ctx)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return response{}, fmt.Errorf("%w-%v", ErrSendingRequest, err)
 	}
 	defer resp.Body.Close()
 
 	var rpcResp response
 	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+		return response{}, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
+	}
+	if reqID != rpcResp.ID {
+		return response{}, ErrMismatchResponse
+	}
+	return rpcResp, nil
+}
+
+// Accounts return a list of accounts owned by the client
+func Accounts(ctx context.Context, timeout time.Duration, url string, id uint) ([]string, error) {
+	return accounts(ctx, timeout, url, id)
+}
+
+func accounts(ctx context.Context, timeout time.Duration, url string, reqID uint) ([]string, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_accounts", []any{})
+	if err != nil {
+		return nil, err
 	}
 
-	if req.ID != rpcResp.ID {
-		return nil, ErrMismatchResponse
+	response, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return nil, err
 	}
 
 	// Convert the block number from hex to decimal
 	var accts []string
-	if err := json.Unmarshal(rpcResp.Result, &accts); err != nil {
+	if err := json.Unmarshal(response.Result, &accts); err != nil {
 		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
 	}
 
 	return accts, nil
 }
 
-// BlockNumber returns the block number of the latest block
-func BlockNumber(ctx context.Context, url string, id uint) (*big.Int, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ErrContextCancelRPC
-	default:
-		return blockNumber(url, id)
-	}
+// BlockNumber returns the number of the most recent block
+func BlockNumber(ctx context.Context, timeout time.Duration, url string, id uint) (*big.Int, error) {
+	return blockNumber(ctx, timeout, url, id)
 }
 
-func blockNumber(url string, id uint) (*big.Int, error) {
+func blockNumber(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
 
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_blockNumber",
-		Params:  []any{},
-		ID:      id,
-	}
-
-	reqBody, err := json.Marshal(req)
+	reqBody, err := generateRequestBody(reqID, "eth_blockNumber", []any{})
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return nil, err
 	}
 
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return nil, ErrMismatchResponse
+		return nil, err
 	}
 
 	// Convert the block number from hex to decimal
@@ -195,7 +197,6 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 	if err := json.Unmarshal(rpcResp.Result, &blkNum); err != nil {
 		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
 	}
-
 	// Convert to integer
 	blockNumber := new(big.Int)
 	blockNumber.SetString(blkNum[2:], 16) // Remove Ox prefix
@@ -204,50 +205,24 @@ func blockNumber(url string, id uint) (*big.Int, error) {
 }
 
 // GasPrice return suggested gas price in int64 (wei)
-func GasPrice(ctx context.Context, url string, id uint) (*big.Int, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ErrContextCancelRPC
-	default:
-		return gasPrice(url, id)
-	}
+func GasPrice(ctx context.Context, timeout time.Duration, url string, id uint) (*big.Int, error) {
+	return gasPrice(ctx, timeout, url, id)
 }
 
-func gasPrice(url string, id uint) (*big.Int, error) {
-
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_gasPrice",
-		Params:  []any{},
-		ID:      id,
-	}
-
-	reqBody, err := json.Marshal(req)
+func gasPrice(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
+	reqBody, err := generateRequestBody(reqID, "eth_gasPrice", []any{})
 	if err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return nil, err
 	}
-
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
+		return nil, err
 	}
-	defer resp.Body.Close()
-
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return big.NewInt(-1), ErrMismatchResponse
-	}
-
 	// Convert the block number from hex to decimal
 	var netID string
 	if err := json.Unmarshal(rpcResp.Result, &netID); err != nil {
 		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
 	}
-
 	networkID := new(big.Int)
 	networkID.SetString(netID[2:], 16)
 
@@ -264,44 +239,20 @@ func gasPrice(url string, id uint) (*big.Int, error) {
 //		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 //		Block tag: See constants
 //	hydrated - true or false
-func GetBlockByNumber(ctx context.Context, url string, id uint, block string, hydrated bool) (Block, error) {
-	select {
-	case <-ctx.Done():
-		return Block{}, ErrContextCancelRPC
-	default:
-		return getBlockByNumber(url, id, block, hydrated)
-	}
+func GetBlockByNumber(ctx context.Context, timeout time.Duration, url string, id uint, block string, hydrated bool) (Block, error) {
+	return getBlockByNumber(ctx, timeout, url, id, block, hydrated)
 }
 
-func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, error) {
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_getBlockByNumber",
-		Params:  []any{block, hydrated},
-		ID:      id,
-	}
+func getBlockByNumber(ctx context.Context, timeout time.Duration, url string, reqID uint, block string, hydrated bool) (Block, error) {
 
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
+	reqBody, err := generateRequestBody(reqID, "eth_getBlockByNumber", []any{block, hydrated})
 	if err != nil {
-		return Block{}, fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return Block{}, err
 	}
 
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return Block{}, fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return Block{}, fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return Block{}, ErrMismatchResponse
+		return Block{}, err
 	}
 
 	// Unmarshal the block data (including transactions)
@@ -323,44 +274,20 @@ func getBlockByNumber(url string, id uint, block string, hydrated bool) (Block, 
 //	block - Block number or Block tag
 //		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 //		Block tag: See constants
-func GetBalance(ctx context.Context, url string, id uint, address string, block string) (string, error) {
-	select {
-	case <-ctx.Done():
-		return "", ErrContextCancelRPC
-	default:
-		return getBalance(url, id, address, block)
-	}
+func GetBalance(ctx context.Context, timeout time.Duration, url string, id uint, address string, block string) (string, error) {
+	return getBalance(ctx, timeout, url, id, address, block)
 }
 
-func getBalance(url string, id uint, address string, block string) (string, error) {
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_getBalance",
-		Params:  []any{address, block},
-		ID:      id,
-	}
+func getBalance(ctx context.Context, timeout time.Duration, url string, reqID uint, address string, block string) (string, error) {
 
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
+	reqBody, err := generateRequestBody(reqID, "eth_getBalance", []any{address, block})
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return "", err
 	}
 
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return "", ErrMismatchResponse
+		return "", err
 	}
 
 	// Unmarshal balance
@@ -372,7 +299,7 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 	return balance, nil
 }
 
-// GetTxnCount returns the nonce in big.Int depending on status
+// GetTxnCount returns the nonce in big.Int depending on status.
 //
 // Arguments:
 //
@@ -382,94 +309,35 @@ func getBalance(url string, id uint, address string, block string) (string, erro
 //	block - Block number or Block tag
 //		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 //		Block tag: See constants
-func GetTxnCount(ctx context.Context, url string, id uint, address string, block string) (*big.Int, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ErrContextCancelRPC
-	default:
-		return getTxnCount(url, id, address, block)
-	}
+func GetTxnCount(ctx context.Context, timeout time.Duration, url string, id uint, address string, block string) (*big.Int, error) {
+	return getTxnCount(ctx, timeout, url, id, address, block)
 }
 
-func getTxnCount(url string, id uint, address string, block string) (*big.Int, error) {
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_getBalance",
-		Params:  []any{address, block},
-		ID:      id,
-	}
-
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
+func getTxnCount(ctx context.Context, timeout time.Duration, url string, reqID uint, address string, block string) (*big.Int, error) {
+	count, err := getBalance(ctx, timeout, url, reqID, address, block)
 	if err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return nil, fmt.Errorf("%w-%v", ErrTxnCount, err)
 	}
-
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return big.NewInt(-1), ErrMismatchResponse
-	}
-
-	// Unmarshal count
-	var count string
-	if err := json.Unmarshal(rpcResp.Result, &count); err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalTxnCount, err)
-	}
-
 	ct := new(big.Int)
 	ct.SetString(count[2:], 16)
 	return ct, nil
 }
 
 // NetworkID returns the ID in int64
-func NetworkID(ctx context.Context, url string, id uint) (*big.Int, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ErrContextCancelRPC
-	default:
-		return networkID(url, id)
-	}
+func NetworkID(ctx context.Context, timeout time.Duration, url string, id uint) (*big.Int, error) {
+	return networkID(ctx, timeout, url, id)
 }
 
-func networkID(url string, id uint) (*big.Int, error) {
+func networkID(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
 
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "net_version",
-		Params:  []any{},
-		ID:      id,
-	}
-
-	reqBody, err := json.Marshal(req)
+	reqBody, err := generateRequestBody(reqID, "net_version", []any{})
 	if err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return nil, err
 	}
 
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return big.NewInt(-1), ErrMismatchResponse
+		return nil, err
 	}
 
 	// Convert the block number from hex to decimal
@@ -529,20 +397,15 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 // Arguments:
 //
 //	url - to an ethereum json rpc endpoint
-//	id - an identifier to match request and response
+//	reqID - an identifier to match request and response
 //	txn - transaction of type TxnArg
-func SendTransaction(ctx context.Context, url string, id uint, txn TxnArg) (string, error) {
-	select {
-	case <-ctx.Done():
-		return "", ErrContextCancelRPC
-	default:
-		// Convert struct to map[string]any
-		m, err := transformTxnArg(txn)
-		if err != nil {
-			return "", err
-		}
-		return sendTransaction(url, id, m)
+func SendTransaction(ctx context.Context, timeout time.Duration, url string, reqID uint, txn TxnArg) (string, error) {
+	// Convert struct to map[string]any
+	m, err := transformTxnArg(txn)
+	if err != nil {
+		return "", err
 	}
+	return sendTransaction(ctx, timeout, url, reqID, m)
 }
 
 // SendRawTransaction returns a hash of the transaction
@@ -553,13 +416,8 @@ func SendTransaction(ctx context.Context, url string, id uint, txn TxnArg) (stri
 // Arguments:
 //
 //	url - to an ethereum json rpc endpoint
-//	id - an identifier to match request and response
+//	reqID - an identifier to match request and response
 //	txn - signed transaction hex in string
-func SendRawTransaction(ctx context.Context, url string, id uint, txn string) (string, error) {
-	select {
-	case <-ctx.Done():
-		return "", ErrContextCancelRPC
-	default:
-		return sendRawTransaction(url, id, txn)
-	}
+func SendRawTransaction(ctx context.Context, timeout time.Duration, url string, id uint, txn string) (string, error) {
+	return sendRawTransaction(ctx, timeout, url, id, txn)
 }

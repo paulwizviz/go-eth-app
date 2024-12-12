@@ -19,41 +19,22 @@
 package jrpc
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"time"
 )
 
-func sendRawTransaction(url string, id uint, txn string) (string, error) {
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_sendRawTransaction",
-		Params:  []any{txn},
-		ID:      id,
-	}
+func sendRawTransaction(ctx context.Context, timeout time.Duration, url string, reqID uint, txn string) (string, error) {
 
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
+	reqBody, err := generateRequestBody(reqID, "eth_sendRawTransaction", []any{txn})
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return "", err
 	}
 
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return "", ErrMismatchResponse
+		return "", err
 	}
 
 	// Unmarshal txnHash
@@ -64,36 +45,16 @@ func sendRawTransaction(url string, id uint, txn string) (string, error) {
 	return txnHash, nil
 }
 
-func sendTransaction(url string, id uint, txn map[string]any) (string, error) {
+func sendTransaction(ctx context.Context, timeout time.Duration, url string, reqID uint, txn map[string]any) (string, error) {
 
-	req := request{
-		JsonRPC: rpcVersion,
-		Method:  "eth_sendTransaction",
-		Params:  []any{txn},
-		ID:      id,
-	}
-
-	// Marshal the request to JSON
-	reqBody, err := json.Marshal(req)
+	reqBody, err := generateRequestBody(reqID, "eth_sendTransaction", []any{txn})
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrMarshalRequest, err)
+		return "", err
 	}
 
-	// Send the request
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(reqBody))
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrSendingRequest, err)
-	}
-	defer resp.Body.Close()
-
-	// Decode the response
-	var rpcResp response
-	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUmarshalResponse, err)
-	}
-
-	if req.ID != rpcResp.ID {
-		return "", ErrMismatchResponse
+		return "", err
 	}
 
 	// Unmarshal txnHash

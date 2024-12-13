@@ -3,5 +3,17 @@
 pragma solidity ^0.8.28;
 
 contract HelloWorld {
-    string public greet = "Hello World!";
+    uint256 public storedValue;
+
+    constructor(uint256 initialValue) {
+        storedValue = initialValue;
+    }
+
+    function getValue() public view returns (uint256) {
+        return storedValue;
+    }
+
+    function setValue(uint256 newValue) public {
+        storedValue = newValue;
+    }
 }

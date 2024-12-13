@@ -90,7 +90,7 @@ type TxnEIP2930 struct {
 	TransactionIndex string       `json:"transactionIndex"`
 }
 
-// TxnEIP1559 is a representation of EIP2930 transaction.
+// TxnEIP1559 is a representation of dynamic fee transaction.
 // Type: 0x2
 type TxnEIP1559 struct {
 	Type                 *string `json:"type"`

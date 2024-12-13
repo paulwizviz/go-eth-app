@@ -69,6 +69,8 @@ var (
 	ErrUmarshalResponse = errors.New("unmarshal respond")
 	// ErrMismatchResponse error mismatch JSON-RPC request
 	ErrMismatchResponse = errors.New("mismatch response")
+	// ErrResponse error from the JSON-RPC server
+	ErrResponse = errors.New("response error")
 	// ErrUnmarshalAccounts error unmarshaling accout list
 	ErrUnmarshalAccounts = errors.New("umarshal accounts")
 	// ErrUnmarshalBlockNumber error unmarshaling block number from JSON-RPC response
@@ -115,10 +117,16 @@ func generateRequestBody(reqID uint, method string, params []any) ([]byte, error
 	return b, nil
 }
 
+type respError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 type response struct {
 	JsonRPC string          `json:"jsonrpc"`
 	ID      uint            `json:"id"`
 	Result  json.RawMessage `json:"result"`
+	Err     *respError      `json:"error,omitempty"`
 }
 
 func postRPC(ctx context.Context, timeout time.Duration, url string, reqID uint, reqBody []byte) (response, error) {
@@ -146,209 +154,12 @@ func postRPC(ctx context.Context, timeout time.Duration, url string, reqID uint,
 	if reqID != rpcResp.ID {
 		return response{}, ErrMismatchResponse
 	}
+
+	if rpcResp.Err != nil {
+		errMsg := fmt.Sprintf("Error code: %v message: %v", rpcResp.Err.Code, rpcResp.Err.Message)
+		return response{}, fmt.Errorf("%w-%v", ErrResponse, errMsg)
+	}
 	return rpcResp, nil
-}
-
-// Accounts return a list of accounts owned by the client
-func Accounts(ctx context.Context, timeout time.Duration, url string, id uint) ([]string, error) {
-	return accounts(ctx, timeout, url, id)
-}
-
-func accounts(ctx context.Context, timeout time.Duration, url string, reqID uint) ([]string, error) {
-
-	reqBody, err := generateRequestBody(reqID, "eth_accounts", []any{})
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := postRPC(ctx, timeout, url, reqID, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert the block number from hex to decimal
-	var accts []string
-	if err := json.Unmarshal(response.Result, &accts); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
-	}
-
-	return accts, nil
-}
-
-// BlockNumber returns the number of the most recent block
-func BlockNumber(ctx context.Context, timeout time.Duration, url string, id uint) (*big.Int, error) {
-	return blockNumber(ctx, timeout, url, id)
-}
-
-func blockNumber(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
-
-	reqBody, err := generateRequestBody(reqID, "eth_blockNumber", []any{})
-	if err != nil {
-		return nil, err
-	}
-
-	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert the block number from hex to decimal
-	var blkNum string
-	if err := json.Unmarshal(rpcResp.Result, &blkNum); err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
-	}
-	// Convert to integer
-	blockNumber := new(big.Int)
-	blockNumber.SetString(blkNum[2:], 16) // Remove Ox prefix
-
-	return blockNumber, nil
-}
-
-// GasPrice return suggested gas price in int64 (wei)
-func GasPrice(ctx context.Context, timeout time.Duration, url string, id uint) (*big.Int, error) {
-	return gasPrice(ctx, timeout, url, id)
-}
-
-func gasPrice(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
-	reqBody, err := generateRequestBody(reqID, "eth_gasPrice", []any{})
-	if err != nil {
-		return nil, err
-	}
-	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
-	if err != nil {
-		return nil, err
-	}
-	// Convert the block number from hex to decimal
-	var netID string
-	if err := json.Unmarshal(rpcResp.Result, &netID); err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
-	}
-	networkID := new(big.Int)
-	networkID.SetString(netID[2:], 16)
-
-	return networkID, nil
-}
-
-// GetBlockByNumber returns a block type
-//
-// Argments:
-//
-//	url - to an ethereum json rpc endpoint
-//	id - an identifier to match request and response
-//	block - Block number or Block tag
-//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
-//		Block tag: See constants
-//	hydrated - true or false
-func GetBlockByNumber(ctx context.Context, timeout time.Duration, url string, id uint, block string, hydrated bool) (Block, error) {
-	return getBlockByNumber(ctx, timeout, url, id, block, hydrated)
-}
-
-func getBlockByNumber(ctx context.Context, timeout time.Duration, url string, reqID uint, block string, hydrated bool) (Block, error) {
-
-	reqBody, err := generateRequestBody(reqID, "eth_getBlockByNumber", []any{block, hydrated})
-	if err != nil {
-		return Block{}, err
-	}
-
-	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
-	if err != nil {
-		return Block{}, err
-	}
-
-	// Unmarshal the block data (including transactions)
-	var blk Block
-	if err := json.Unmarshal(rpcResp.Result, &blk); err != nil {
-		return Block{}, fmt.Errorf("%w-%v", ErrUnmarshalBlock, err)
-	}
-
-	return blk, nil
-}
-
-// GetBalance returns the balance for a given address and block
-//
-// Arguments:
-//
-//	url - to an ethereum json rpc endpoint
-//	id - an identifier to match request and response
-//	address - of the account
-//	block - Block number or Block tag
-//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
-//		Block tag: See constants
-func GetBalance(ctx context.Context, timeout time.Duration, url string, id uint, address string, block string) (string, error) {
-	return getBalance(ctx, timeout, url, id, address, block)
-}
-
-func getBalance(ctx context.Context, timeout time.Duration, url string, reqID uint, address string, block string) (string, error) {
-
-	reqBody, err := generateRequestBody(reqID, "eth_getBalance", []any{address, block})
-	if err != nil {
-		return "", err
-	}
-
-	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
-	if err != nil {
-		return "", err
-	}
-
-	// Unmarshal balance
-	var balance string
-	if err := json.Unmarshal(rpcResp.Result, &balance); err != nil {
-		return "", fmt.Errorf("%w-%v", ErrUnmarshalBalance, err)
-	}
-
-	return balance, nil
-}
-
-// GetTxnCount returns the nonce in big.Int depending on status.
-//
-// Arguments:
-//
-//	url - to an ethereum json rpc endpoint
-//	id - an identifier to match request and response
-//	address - of the account
-//	block - Block number or Block tag
-//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
-//		Block tag: See constants
-func GetTxnCount(ctx context.Context, timeout time.Duration, url string, id uint, address string, block string) (*big.Int, error) {
-	return getTxnCount(ctx, timeout, url, id, address, block)
-}
-
-func getTxnCount(ctx context.Context, timeout time.Duration, url string, reqID uint, address string, block string) (*big.Int, error) {
-	count, err := getBalance(ctx, timeout, url, reqID, address, block)
-	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrTxnCount, err)
-	}
-	ct := new(big.Int)
-	ct.SetString(count[2:], 16)
-	return ct, nil
-}
-
-// NetworkID returns the ID in int64
-func NetworkID(ctx context.Context, timeout time.Duration, url string, id uint) (*big.Int, error) {
-	return networkID(ctx, timeout, url, id)
-}
-
-func networkID(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
-
-	reqBody, err := generateRequestBody(reqID, "net_version", []any{})
-	if err != nil {
-		return nil, err
-	}
-
-	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert the block number from hex to decimal
-	var networkID string
-	if err := json.Unmarshal(rpcResp.Result, &networkID); err != nil {
-		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
-	}
-
-	netID := new(big.Int)
-	netID.SetString(networkID, 10)
-	return netID, nil
 }
 
 type AccessListArg struct {
@@ -391,33 +202,300 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 	return m, nil
 }
 
-// SendTransaction returns a hash of the transaction.
-// NOTE: Use this for cases where the private key is stored on the node.
-//
-// Arguments:
-//
-//	url - to an ethereum json rpc endpoint
-//	reqID - an identifier to match request and response
-//	txn - transaction of type TxnArg
-func SendTransaction(ctx context.Context, timeout time.Duration, url string, reqID uint, txn TxnArg) (string, error) {
+type Client interface {
+	// Accounts return a list of accounts owned by the reference node
+	Accounts(ctx context.Context, reqID uint) ([]string, error)
+	// BlockNumber returns the number of the most recent block
+	BlockNumber(ctx context.Context, reqID uint) (*big.Int, error)
+	// GasPrice return suggested gas price in int64 (wei)
+	GasPrice(ctx context.Context, reqID uint) (*big.Int, error)
+	// GetBlockByNumber returns a block type
+	//
+	// Argments:
+	//
+	//	reqID - an identifier to match request and response
+	//	block - Block number or Block tag
+	//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
+	//		Block tag: See constants
+	//	hydrated - true or false
+	GetBlockByNumber(ctx context.Context, reqID uint, block string, hydrated bool) (Block, error)
+	// GetBalance returns the balance for a given address and block
+	//
+	// Arguments:
+	//
+	//	reqID - an identifier to match request and response
+	//	address - of the account
+	//	block - Block number or Block tag
+	//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
+	//		Block tag: See constants
+	GetBalance(ctx context.Context, reqID uint, address string, block string) (string, error)
+	// GetTxnCount returns the nonce in big.Int depending on status.
+	//
+	// Arguments:
+	//
+	//	reqID - an identifier to match request and response
+	//	address - of the account
+	//	block - Block number or Block tag
+	//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
+	//		Block tag: See constants
+	GetTxnCount(ctx context.Context, reqID uint, address string, block string) (*big.Int, error)
+	// NetworkID returns the ID in int64
+	NetworkID(ctx context.Context, reqID uint) (*big.Int, error)
+	// SendTransaction returns a hash of the transaction.
+	// NOTE: Use this for cases where the private key is stored on the node.
+	//
+	// Arguments:
+	//
+	//	reqID - an identifier to match request and response
+	//	txn - transaction of type TxnArg
+	SendTransaction(ctx context.Context, reqID uint, txn TxnArg) (string, error)
+	// SendRawTransaction returns a hash of the transaction
+	// NOTE: Use this for cases where you sign transaction externally and
+	//	passed the signed the transaction.
+	//
+	// Arguments:
+	//
+	//	reqID - an identifier to match request and response
+	//	txn - signed transaction hex in string
+	SendRawTransaction(ctx context.Context, reqID uint, txn string) (string, error)
+}
+
+type client struct {
+	timeout time.Duration
+	url     string
+}
+
+func (c client) Accounts(ctx context.Context, reqID uint) ([]string, error) {
+	return accounts(ctx, c.timeout, c.url, reqID)
+}
+
+func accounts(ctx context.Context, timeout time.Duration, url string, reqID uint) ([]string, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_accounts", []any{})
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the block number from hex to decimal
+	var accts []string
+	if err := json.Unmarshal(response.Result, &accts); err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
+	}
+
+	return accts, nil
+}
+
+func (c client) BlockNumber(ctx context.Context, reqID uint) (*big.Int, error) {
+	return blockNumber(ctx, c.timeout, c.url, reqID)
+}
+
+func blockNumber(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_blockNumber", []any{})
+	if err != nil {
+		return nil, err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the block number from hex to decimal
+	var blkNum string
+	if err := json.Unmarshal(rpcResp.Result, &blkNum); err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnmarshalBlockNumber, err)
+	}
+	// Convert to integer
+	blockNumber := new(big.Int)
+	blockNumber.SetString(blkNum[2:], 16) // Remove Ox prefix
+
+	return blockNumber, nil
+}
+
+func (c client) GasPrice(ctx context.Context, reqID uint) (*big.Int, error) {
+	return gasPrice(ctx, c.timeout, c.url, reqID)
+}
+
+func gasPrice(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
+	reqBody, err := generateRequestBody(reqID, "eth_gasPrice", []any{})
+	if err != nil {
+		return nil, err
+	}
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	// Convert the block number from hex to decimal
+	var netID string
+	if err := json.Unmarshal(rpcResp.Result, &netID); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
+	}
+	networkID := new(big.Int)
+	networkID.SetString(netID[2:], 16)
+
+	return networkID, nil
+}
+
+func (c client) GetBlockByNumber(ctx context.Context, reqID uint, block string, hydrated bool) (Block, error) {
+	return getBlockByNumber(ctx, c.timeout, c.url, reqID, block, hydrated)
+}
+
+func getBlockByNumber(ctx context.Context, timeout time.Duration, url string, reqID uint, block string, hydrated bool) (Block, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_getBlockByNumber", []any{block, hydrated})
+	if err != nil {
+		return Block{}, err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return Block{}, err
+	}
+
+	// Unmarshal the block data (including transactions)
+	var blk Block
+	if err := json.Unmarshal(rpcResp.Result, &blk); err != nil {
+		return Block{}, fmt.Errorf("%w-%v", ErrUnmarshalBlock, err)
+	}
+
+	return blk, nil
+}
+
+func (c client) GetBalance(ctx context.Context, reqID uint, address string, block string) (string, error) {
+	return getBalance(ctx, c.timeout, c.url, reqID, address, block)
+}
+
+func getBalance(ctx context.Context, timeout time.Duration, url string, reqID uint, address string, block string) (string, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_getBalance", []any{address, block})
+	if err != nil {
+		return "", err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshal balance
+	var balance string
+	if err := json.Unmarshal(rpcResp.Result, &balance); err != nil {
+		return "", fmt.Errorf("%w-%v", ErrUnmarshalBalance, err)
+	}
+
+	return balance, nil
+}
+
+func (c client) GetTxnCount(ctx context.Context, reqID uint, address string, block string) (*big.Int, error) {
+	return getTxnCount(ctx, c.timeout, c.url, reqID, address, block)
+}
+
+func getTxnCount(ctx context.Context, timeout time.Duration, url string, reqID uint, address string, block string) (*big.Int, error) {
+	count, err := getBalance(ctx, timeout, url, reqID, address, block)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrTxnCount, err)
+	}
+	ct := new(big.Int)
+	ct.SetString(count[2:], 16)
+	return ct, nil
+}
+
+func (c client) NetworkID(ctx context.Context, reqID uint) (*big.Int, error) {
+	return networkID(ctx, c.timeout, c.url, reqID)
+}
+
+func networkID(ctx context.Context, timeout time.Duration, url string, reqID uint) (*big.Int, error) {
+
+	reqBody, err := generateRequestBody(reqID, "net_version", []any{})
+	if err != nil {
+		return nil, err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the block number from hex to decimal
+	var networkID string
+	if err := json.Unmarshal(rpcResp.Result, &networkID); err != nil {
+		return big.NewInt(-1), fmt.Errorf("%w-%v", ErrUnmarshalNetworkID, err)
+	}
+
+	netID := new(big.Int)
+	netID.SetString(networkID, 10)
+	return netID, nil
+}
+
+func (c client) SendTransaction(ctx context.Context, reqID uint, txn TxnArg) (string, error) {
 	// Convert struct to map[string]any
 	m, err := transformTxnArg(txn)
 	if err != nil {
 		return "", err
 	}
-	return sendTransaction(ctx, timeout, url, reqID, m)
+	return sendTransaction(ctx, c.timeout, c.url, reqID, m)
 }
 
-// SendRawTransaction returns a hash of the transaction
-// NOTE: Use this for cases where you sign transaction externally and
-//
-//	passed the signed the transaction.
-//
-// Arguments:
-//
-//	url - to an ethereum json rpc endpoint
-//	reqID - an identifier to match request and response
-//	txn - signed transaction hex in string
-func SendRawTransaction(ctx context.Context, timeout time.Duration, url string, id uint, txn string) (string, error) {
-	return sendRawTransaction(ctx, timeout, url, id, txn)
+func sendTransaction(ctx context.Context, timeout time.Duration, url string, reqID uint, txn map[string]any) (string, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_sendTransaction", []any{txn})
+	if err != nil {
+		return "", err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshal txnHash
+	var txnHash string
+	if err := json.Unmarshal(rpcResp.Result, &txnHash); err != nil {
+		return "", fmt.Errorf("%w-%v", ErrUnmarshalTxnHash, err)
+	}
+	return txnHash, nil
+}
+
+func (c client) SendRawTransaction(ctx context.Context, reqID uint, txn string) (string, error) {
+	return sendRawTransaction(ctx, c.timeout, c.url, reqID, txn)
+}
+
+func sendRawTransaction(ctx context.Context, timeout time.Duration, url string, reqID uint, txn string) (string, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_sendRawTransaction", []any{txn})
+	if err != nil {
+		return "", err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshal txnHash
+	var txnHash string
+	if err := json.Unmarshal(rpcResp.Result, &txnHash); err != nil {
+		return "", fmt.Errorf("%w-%v", ErrUnmarshalTxnHash, err)
+	}
+	return txnHash, nil
+}
+
+func NewDefaultClient(url string) Client {
+	return client{
+		timeout: 60 * time.Second,
+		url:     url,
+	}
+}
+
+func NewClient(timeout time.Duration, url string) Client {
+	return client{
+		timeout: timeout,
+		url:     url,
+	}
 }

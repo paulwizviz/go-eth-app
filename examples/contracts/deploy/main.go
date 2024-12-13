@@ -9,25 +9,23 @@ import (
 	"os"
 	"paulwizviz/go-eth-app/internal/contract"
 	"paulwizviz/go-eth-app/internal/jrpc"
-	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func main() {
 
-	url := "http://localhost:8545"
-	timeout := 50 * time.Millisecond
+	client := jrpc.NewDefaultClient("http://localhost:8545")
 
 	// Get random dev account
-	accts, err := jrpc.Accounts(context.TODO(), timeout, url, 1)
+	accts, err := client.Accounts(context.TODO(), 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(accts)
 
 	// Obtain the balance of random dev account
-	bal, err := jrpc.GetBalance(context.TODO(), timeout, url, 1, accts[0], jrpc.BlockTagLATEST)
+	bal, err := client.GetBalance(context.TODO(), 1, accts[0], jrpc.BlockTagLATEST)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,7 +52,7 @@ func main() {
 		GasPrice: "0x3b9aca00", // 1,000,000,000
 	}
 
-	txnHash, err := jrpc.SendTransaction(context.TODO(), timeout, url, 1, txn1)
+	txnHash, err := client.SendTransaction(context.TODO(), 1, txn1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,21 +71,21 @@ func main() {
 	fmt.Println(content)
 
 	// Get the nounce from pending blocks
-	nonce, err := jrpc.GetTxnCount(context.TODO(), timeout, url, 1, address, jrpc.BlockTagPENDING)
+	nonce, err := client.GetTxnCount(context.TODO(), 1, address, jrpc.BlockTagPENDING)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("nonce", nonce)
 
 	// Get suggested gas price
-	gasPrice, err := jrpc.GasPrice(context.TODO(), timeout, url, 1)
+	gasPrice, err := client.GasPrice(context.TODO(), 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Gas price: ", gasPrice)
 
 	// Get Chain ID
-	chainID, err := jrpc.NetworkID(context.TODO(), timeout, url, 1)
+	chainID, err := client.NetworkID(context.TODO(), 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,7 +107,7 @@ func main() {
 	s := fmt.Sprintf("0x%v", hex.EncodeToString(b))
 
 	// Send signed transaction to Dev node
-	txnHash, err = jrpc.SendRawTransaction(context.TODO(), timeout, url, 1, s)
+	txnHash, err = client.SendRawTransaction(context.TODO(), 1, s)
 	if err != nil {
 		log.Fatal(err)
 	}

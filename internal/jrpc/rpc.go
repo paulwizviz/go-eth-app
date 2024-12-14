@@ -87,8 +87,12 @@ var (
 	ErrUnmarshalNetworkID = errors.New("unmarhsal network id")
 	// ErrUnmarshalGasPrice error unmarshaling gas price
 	ErrUnmarshalGasPrice = errors.New("unmarshal gas price")
+	// ErrUnmarshalCallHash error unmarshaling call hash
+	ErrUnmarshalCallHash = errors.New("unmarshall call hash")
 	// ErrTxnCount error unmarshaling txn count
 	ErrTxnCount = errors.New("unable to get txn count")
+	// ErrUnmarshalTxnReceipt error unmarshaling receipt
+	ErrUnmarshalTxnReceipt = errors.New("unable to unmarshal txn receipt")
 )
 
 const (
@@ -184,6 +188,7 @@ type TxnArg struct {
 	BlobVersionedHashes  []string        `json:"blobVersionedHashes,omitempty"`
 	Blobs                []string        `json:"blobs,omitempty"`
 	ChainID              string          `json:"chainId,omitempty"`
+	Data                 string          `json:"data,omitempty"`
 }
 
 func transformTxnArg(txn TxnArg) (map[string]any, error) {
@@ -202,11 +207,32 @@ func transformTxnArg(txn TxnArg) (map[string]any, error) {
 	return m, nil
 }
 
+// TxnReceipt represents receipt from transaction hash
+type TxnReceipt struct {
+	Type              string   `json:"type,omitempty"`
+	TransactionHash   string   `json:"transactionHash,omitempty"`
+	BlockHash         string   `json:"blockHash,omitempty"`
+	BlockNumber       string   `json:"blockNumber,omitempty"`
+	From              string   `json:"from,omitempty"`
+	To                string   `json:"to,omitempty"`
+	CumulativeGasUsed string   `json:"cumulativeGasUsed,omitempty"`
+	ContractAddress   string   `json:"contractAddress,omitempty"`
+	Logs              []string `json:"logs,omitempty"`
+	LogsBloom         string   `json:"logsBloom,omitempty"`
+	Root              string   `json:"root,omitempty"`
+	Status            string   `json:"status,omitempty"`
+	EffectiveGasPrice string   `json:"effectiveGasPrice,omitempty"`
+	BlobGasPrice      string   `json:"blobGasPrice,omitempty"`
+}
+
+// Client represent a http client
 type Client interface {
 	// Accounts return a list of accounts owned by the reference node
 	Accounts(ctx context.Context, reqID uint) ([]string, error)
 	// BlockNumber returns the number of the most recent block
 	BlockNumber(ctx context.Context, reqID uint) (*big.Int, error)
+	// Call executes a new message call immediately without creating a transaction
+	Call(ctx context.Context, reqID uint, txn TxnArg, block string) (string, error)
 	// GasPrice return suggested gas price in int64 (wei)
 	GasPrice(ctx context.Context, reqID uint) (*big.Int, error)
 	// GetBlockByNumber returns a block type
@@ -239,6 +265,8 @@ type Client interface {
 	//		Block number: ^0x([1-9a-f]+[0-9a-f]*|0)$
 	//		Block tag: See constants
 	GetTxnCount(ctx context.Context, reqID uint, address string, block string) (*big.Int, error)
+	// GetTxnReceipt return receipt for a given txnHash
+	GetTxnReceipt(ctx context.Context, reqID uint, txnHash string) (TxnReceipt, error)
 	// NetworkID returns the ID in int64
 	NetworkID(ctx context.Context, reqID uint) (*big.Int, error)
 	// SendTransaction returns a hash of the transaction.
@@ -316,6 +344,36 @@ func blockNumber(ctx context.Context, timeout time.Duration, url string, reqID u
 	blockNumber.SetString(blkNum[2:], 16) // Remove Ox prefix
 
 	return blockNumber, nil
+}
+
+func (c client) Call(ctx context.Context, reqID uint, txn TxnArg, block string) (string, error) {
+	// Convert struct to map[string]any
+	m, err := transformTxnArg(txn)
+	if err != nil {
+		return "", err
+	}
+	return call(ctx, c.timeout, c.url, reqID, m, block)
+}
+
+func call(ctx context.Context, timeout time.Duration, url string, reqID uint, txn map[string]any, block string) (string, error) {
+
+	reqBody, err := generateRequestBody(reqID, "eth_call", []any{txn, block})
+	if err != nil {
+		return "", err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshal callhash
+	var callHash string
+	if err := json.Unmarshal(rpcResp.Result, &callHash); err != nil {
+		return "", fmt.Errorf("%w-%v", ErrUnmarshalCallHash, err)
+	}
+
+	return callHash, nil
 }
 
 func (c client) GasPrice(ctx context.Context, reqID uint) (*big.Int, error) {
@@ -404,6 +462,30 @@ func getTxnCount(ctx context.Context, timeout time.Duration, url string, reqID u
 	ct := new(big.Int)
 	ct.SetString(count[2:], 16)
 	return ct, nil
+}
+
+func (c client) GetTxnReceipt(ctx context.Context, reqID uint, txnHash string) (TxnReceipt, error) {
+	return getTxnReceipt(ctx, c.timeout, c.url, reqID, txnHash)
+}
+
+func getTxnReceipt(ctx context.Context, timeout time.Duration, url string, reqID uint, txnHash string) (TxnReceipt, error) {
+	reqBody, err := generateRequestBody(reqID, "eth_getTransactionReceipt", []any{txnHash})
+	if err != nil {
+		return TxnReceipt{}, err
+	}
+
+	rpcResp, err := postRPC(ctx, timeout, url, reqID, reqBody)
+	if err != nil {
+		return TxnReceipt{}, err
+	}
+
+	// Unmarshal transaction receipt
+	var receipt TxnReceipt
+	if err := json.Unmarshal(rpcResp.Result, &receipt); err != nil {
+		return TxnReceipt{}, fmt.Errorf("%w-%v", ErrUnmarshalTxnReceipt, err)
+	}
+
+	return receipt, nil
 }
 
 func (c client) NetworkID(ctx context.Context, reqID uint) (*big.Int, error) {

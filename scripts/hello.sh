@@ -37,9 +37,6 @@ case $COMMAND in
     "compile")
         compile_sol
         ;;
-    "shell")
-        docker run -it --rm $GETH_TOOLS_IMAGE_NAME /bin/bash
-        ;;
     *)
         echo "Usage: $0 [build | clean]"
         ;;

@@ -16,10 +16,10 @@ function dev_node(){
     local cmd=$1
     case $cmd in
         "start")
-            docker compose -f ./deployment/gethdev/dev-node.yaml up
+            docker compose -f ./deployment/geth/dev-node.yaml up
             ;;
         "stop")
-            docker compose -f ./deployment/gethdev/dev-node.yaml down
+            docker compose -f ./deployment/geth/dev-node.yaml down
             ;;
         *)
             echo "Usage: $0 dev [start | stop]"

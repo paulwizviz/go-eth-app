@@ -1,10 +1,9 @@
 services:
 
   geth:
-    image: ${GETH_NODE_IMAGE_NAME}
+    image: ${GO_CLIENT_TOOL}
     command: /root/init.sh
     volumes:
-      - ./geth-data:/root/.ethereum
       - ./init.sh:/root/init.sh
     ports:
       - "8545:8545"

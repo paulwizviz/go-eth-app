@@ -1,33 +1,45 @@
-# Building Decentralised Application (dApp) with Go: An Educational Project
+# Building Decentralized Applications (dApps) with Go
 
-This project provides a practical guide for developers to explore the Ethereum ecosystem through the Go programming language. By leveraging a hypothetical product, this educational initiative demonstrates key concepts and workflows, making it accessible for developers to build and interact with blockchain-based applications.
-
-## Intended Audience
-
-This project is designed for blockchain enthusiasts, students, and experienced developers who wish to explore the Ethereum ecosystem using Go. Whether you're new to decentralized applications (dApps) or looking to deepen your understanding of smart contracts, this educational resource lays the groundwork for building and interacting with Ethereum-based applications.
+This project provides a practical guide for developers to explore the Ethereum ecosystem using the Go programming language.
 
 ## Scope of the Project
 
-This project adopts the development of a hypothetical product as a practical and structured approach to demonstrate building Web3 applications with Go. By designing a product with specific features, this educational effort offers a hands-on experience to help developers understand and implement the foundational elements of Ethereum application development. The product includes the following features:
+This project uses the development of hypothetical products as a practical and structured approach to demonstrate building decentralized applications (dApps) with Go. These products include the following features:
 
-1. **Web3 Application**: An example demonstrating how users can send transactions to the Ethereum network and interact with deployed smart contracts.
+1. **Web3 Application**: Demonstrates how users can send transactions to the Ethereum network and interact with deployed smart contracts.
 
-2. **Wallet**: Functionality for managing cryptographic keys, enabling users to securely store and access their Ethereum addresses.
+2. **Wallet**: Provides functionality for managing cryptographic keys, enabling users to securely store and access their Ethereum addresses.
 
-3. **Smart Contract Deployment**: Tools for deploying smart contracts to the Ethereum network directly from a Go application.
+3. **Smart Contract Deployment**: Offers tools for deploying smart contracts to the Ethereum network directly from a Go application.
 
 4. **Blockchain Viewer**: A minimal blockchain explorer for retrieving and displaying Ethereum blockchain data.
 
-By centering the project around this hypothetical product, the approach provides a structured and practical path for learning how to build Web3 applications with Go.
+## Products
 
-## Project Content
+This project aims to build the following dApps:
 
-* Application Programming Interfaces 
-    * [JSON RPC](./docs/jsonrpc.md)
-    * [Go ABI from Solidity](./docs/abi.md)
-    * [Contract Operations API](./docs/contractops.md)
-* [Design](./docs/design.md) - Description of the design of the product.
-* [Tools](./docs/tools.md) - Description of the tools to support the development of the project.
+* [Hopper](./docs/products/hopper.md) - Smart contracts deployer.
+
+* To be determined.
+
+Please note that this list is not exhaustive and may be expanded further as the project evolves.
+
+## Tools
+
+This project uses Docker to build artefacts and enable networks to support development.
+
+* [Solidity compiler and ABI](./docs/tools/abi.md)
+* [Geth nodes and networks](./docs/tools/geth.md)
+
+## Project Folder Structure
+
+* `build/` - Build scripts
+* `cmd/` - Main packages
+* `deployment/` - Docker compose scripts
+* `examples/` - Code snippets demonstrating coding techniques
+* `internal/` - Library packages
+* `scripts/` - Bash scripts to support DevOps
+* `solidity/` - Solidity codes
 
 ## Terms Used in this Project
 

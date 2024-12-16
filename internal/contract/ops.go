@@ -20,39 +20,117 @@ package contract
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 	"os"
+	"paulwizviz/go-eth-app/internal/jrpc"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/types"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
-	// ErrExtractContent error extracting contract content
-	ErrExtractContent = errors.New("unable to extract contract")
+	// ErrExtractBinContent error extracting contract BIN content
+	ErrExtractBinContent = errors.New("unable to extract contract bin content")
+	// ErrExtractABIContent error extracting contract ABI conent
+	ErrExtractABIContent = errors.New("unable to extract contract ABI content")
 	// ErrSignTxn error signing transaction
 	ErrSignTxn = errors.New("unable to sign transaction")
 	// ErrUnableToSendTxn error sending transaction
 	ErrUnableToSendTxn = errors.New("unable to send txn")
+	// ErrUnableToEncodeConstructorArg error encoding constructor arg
+	ErrUnableToEncodeConstructorArg = errors.New("unable to encode constructor arg")
+	// ErrUnableToEncodeFnc error encoding function calls
+	ErrUnableToEncodeFnc = errors.New("unable to encode function call")
 )
 
-// ExtractContent exteact the content of bin file
-func ExtractContent(binFile string) (string, error) {
+// ExtractContentBin extract the content of bin file
+func ExtractContentBin(binFile string) (string, error) {
 	return extractContractBin(binFile)
 }
 
 func extractContractBin(binFile string) (string, error) {
+
+	// TODO: missing check of content format
+
 	data, err := os.ReadFile(binFile)
 	if err != nil {
-		return "", fmt.Errorf("%w-%v", ErrExtractContent, err)
+		return "", fmt.Errorf("%w-%v", ErrExtractBinContent, err)
 	}
 	content := fmt.Sprintf("0x%v", string(data))
 	return content, nil
 }
 
-// createContractEIP1559Txn instantiate a Dynanic Fee Transaction type for contract
-// creation
+// ExtractContractABI extract content of ABI file
+func ExtractContractABI(abiFile string) (string, error) {
+	return extractContractABI(abiFile)
+}
+
+func extractContractABI(abiFile string) (string, error) {
+
+	// TODO: missing check of content
+
+	content, err := os.ReadFile(abiFile)
+	if err != nil {
+		return "", fmt.Errorf("%w-%v", ErrExtractABIContent, err)
+	}
+	return string(content), err
+}
+
+// CreateCallArg create call argument
+func CreateCallArg(contractAddr string, fnc string) jrpc.TxnArg {
+	return createCallArg(contractAddr, fnc)
+}
+
+func createCallArg(contractAddr string, fnc string) jrpc.TxnArg {
+	// Hash the function signature using Keccak-256
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write([]byte(fnc))
+	selector := hash.Sum(nil)[:4] // Take the first 4 bytes
+
+	return jrpc.TxnArg{
+		To:   contractAddr,
+		Data: fmt.Sprintf("0x%v", hex.EncodeToString(selector)),
+	}
+}
+
+// EncodeFuncCall encode function call
+func EncodeFuncCall(contractABI string, fnc string, args ...any) ([]byte, error) {
+	return encodeFuncCall(contractABI, fnc, args...)
+}
+
+func encodeFuncCall(contractABI string, fnc string, args ...any) ([]byte, error) {
+	parseABI, err := abi.JSON(strings.NewReader(contractABI))
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeFnc, err)
+	}
+
+	fncData, err := parseABI.Pack(fnc, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeFnc, err)
+	}
+
+	return fncData, nil
+}
+
+// EncodeConstructorArg encode contract ABI
+func EncodeConstructorArg(contractABI string, args ...any) ([]byte, error) {
+	return encodeConstructorArg(contractABI, args...)
+}
+
+func encodeConstructorArg(contractABI string, args ...any) ([]byte, error) {
+	parseABI, err := abi.JSON(strings.NewReader(contractABI))
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeConstructorArg, err)
+	}
+	return parseABI.Pack("", args...)
+}
+
+// CreateContractEIP1559Txn instantiate a Dynanic Fee Transaction type for contract creation
 func CreateContractEIP1559Txn(chainID int64, nonce uint64, gasTip *big.Int, gasPrice *big.Int, gasLimit uint64, contractBin []byte) *types.Transaction {
 	return createContractEIP1559Txn(chainID, nonce, gasTip, gasPrice, gasLimit, contractBin)
 }

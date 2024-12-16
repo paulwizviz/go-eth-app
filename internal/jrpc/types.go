@@ -40,6 +40,7 @@ type TxnPreEIP2718 struct {
 	Gas              string  `json:"gas"`
 	To               string  `json:"to"`
 	Value            string  `json:"value"`
+	Data             []byte  `json:"data"`
 	Input            string  `json:"input"`
 	V                string  `json:"v"`
 	R                string  `json:"r"`
@@ -59,6 +60,7 @@ type TxnEIP2718 struct {
 	Gas              string  `json:"gas"`
 	To               string  `json:"to"`
 	Value            string  `json:"value"`
+	Data             []byte  `json:"data"`
 	Input            string  `json:"input"`
 	V                string  `json:"v"`
 	R                string  `json:"r"`
@@ -79,6 +81,7 @@ type TxnEIP2930 struct {
 	Gas              string       `json:"gas"`
 	To               string       `json:"to"`
 	Value            string       `json:"value"`
+	Data             []byte       `json:"data"`
 	Input            string       `json:"input"`
 	AccessList       []AccessList `json:"accessList"`
 	V                string       `json:"v"`
@@ -90,7 +93,7 @@ type TxnEIP2930 struct {
 	TransactionIndex string       `json:"transactionIndex"`
 }
 
-// TxnEIP1559 is a representation of EIP2930 transaction.
+// TxnEIP1559 is a representation of dynamic fee transaction.
 // Type: 0x2
 type TxnEIP1559 struct {
 	Type                 *string `json:"type"`
@@ -101,6 +104,7 @@ type TxnEIP1559 struct {
 	Gas                  string  `json:"gas"`
 	To                   string  `json:"to"`
 	Value                string  `json:"value"`
+	Data                 []byte  `json:"data"`
 	Input                string  `json:"input"`
 	V                    string  `json:"v"`
 	R                    string  `json:"r"`
@@ -122,6 +126,7 @@ type TxnEIP4844 struct {
 	Gas                  string   `json:"gas"`
 	To                   string   `json:"to"`
 	Value                string   `json:"value"`
+	Data                 []byte   `json:"data"`
 	Input                string   `json:"input"`
 	BlobVersonedHashes   []string `json:"blobVersionedHashes"`
 	V                    string   `json:"v"`

@@ -26,6 +26,31 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+func Example_extractContractBin() {
+	content, err := extractContractBin("./testdata/HelloWorld.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(content)
+
+	// Output:
+	// 0x6080604052348015600e575f5ffd5b5060405161020f38038061020f8339818101604052810190602e9190606b565b805f81905550506091565b5f5ffd5b5f819050919050565b604d81603d565b81146056575f5ffd5b50565b5f815190506065816046565b92915050565b5f60208284031215607d57607c6039565b5b5f6088848285016059565b91505092915050565b6101718061009e5f395ff3fe608060405234801561000f575f5ffd5b506004361061003f575f3560e01c8063209652551461004357806355241077146100615780636d619daa1461007d575b5f5ffd5b61004b61009b565b60405161005891906100c9565b60405180910390f35b61007b60048036038101906100769190610110565b6100a3565b005b6100856100ac565b60405161009291906100c9565b60405180910390f35b5f5f54905090565b805f8190555050565b5f5481565b5f819050919050565b6100c3816100b1565b82525050565b5f6020820190506100dc5f8301846100ba565b92915050565b5f5ffd5b6100ef816100b1565b81146100f9575f5ffd5b50565b5f8135905061010a816100e6565b92915050565b5f60208284031215610125576101246100e2565b5b5f610132848285016100fc565b9150509291505056fea26469706673582212207c606765efd9417678f0dc77a0d3b0866f663226169b3aa1718c01d0c67d8ea664736f6c634300081c0033
+}
+
+func Example_extractContractABI() {
+
+	content, err := extractContractABI("./testdata/HelloWorld.abi")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(content)
+
+	// Output:
+	// [{"inputs":[{"internalType":"uint256","name":"initialValue","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getValue","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"newValue","type":"uint256"}],"name":"setValue","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"storedValue","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
+}
+
 func Example_signTransaction() {
 	privKey, err := crypto.HexToECDSA("4c0883a69102937d6231471b5dbb6204fe512961708279a8911b138d9d808759")
 	if err != nil {
@@ -65,4 +90,12 @@ func Example_signTransaction() {
 	// V: 0
 	// R: 42493984409369267390634873737391917718079187906863432014006479694048185171415
 	// S: 42796957355589767142391483339700377686928456514032568249873161001150488752575
+}
+
+func Example_createCallArg() {
+	arg := createCallArg("0x0074bfcd232173e682adff51e1a5865cdbb879b6bff1d83989282d23d7c7cfb8", "getValue")
+	fmt.Println(arg.To, len(arg.To))
+	fmt.Println(arg.Data)
+	// Output:
+	// 0xf04ac3b6
 }

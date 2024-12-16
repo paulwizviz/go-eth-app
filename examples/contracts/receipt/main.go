@@ -35,9 +35,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if receipt.ContractAddress == "" {
-		log.Fatal("No contract address")
-	}
 
-	fmt.Println("-->", receipt.ContractAddress, len(receipt.ContractAddress))
+	fmt.Println("-->", receipt)
 }

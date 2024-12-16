@@ -34,8 +34,9 @@ This project uses Docker to build artefacts and enable networks to support devel
 ## Project Folder Structure
 
 * `build/` - Build scripts
-* `deployment/` - Docker compose scripts
 * `cmd/` - Main packages
+* `deployment/` - Docker compose scripts
+* `examples/` - Code snippets demonstrating coding techniques
 * `internal/` - Library packages
 * `scripts/` - Bash scripts to support DevOps
 * `solidity/` - Solidity codes

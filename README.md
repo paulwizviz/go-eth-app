@@ -29,7 +29,13 @@ This project uses Docker to build artefacts and enable networks to support devel
 
 ## Working Examples
 
-* [Ex1](./examples/ex1/main.go) - demonstrate steps to deploy solidity contract on developer's node.
+* Contracts
+    * Deploy
+        * [Dev Node](./examples/contracts/deploy/ex1/main.go)
+        * [Non-Dev Node](./examples/contracts/deploy/ex2/main.go)
+* Wallets
+    * [Keystore](./examples/wallets/keystore/main.go)
+    * [Hierarchical Deterministic Wallet](./examples/wallets/hdw/main.go)
 
 ## Project Folder Structure
 

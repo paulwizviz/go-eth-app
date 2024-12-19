@@ -17,7 +17,7 @@
 // repository's commit history.
 
 // This example demonstrate the steps involved in deploying
-// contracts to Geth node in dev mode.
+// contracts to Geth node in dev mode using internal JSON-RPC.
 
 package main
 

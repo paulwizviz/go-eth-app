@@ -12,6 +12,22 @@ export NETWORK_NAME=go-eth-app_network
 COMMAND=$1
 SUBCOMMAND=$2
 
+function image(){
+    local cmd=$1
+    case $cmd in
+        "build")
+            docker compose -f ./build/gethnode/builder.yaml up
+            ;;
+        "clean")
+            docker rmi -f ${GETH_NODE_IMAGE_NAME}
+            docker rmi -f $(docker images --filter "dangling=true" -q)
+            ;;
+        *)
+            echo "Usage: $0 image [build | clean]"
+            ;;
+    esac
+}
+
 function dev_node(){
     local cmd=$1
     case $cmd in
@@ -28,6 +44,9 @@ function dev_node(){
 }
 
 case $COMMAND in
+    "image")
+        image $SUBCOMMAND
+        ;;
     "dev")
         dev_node $SUBCOMMAND
         ;;

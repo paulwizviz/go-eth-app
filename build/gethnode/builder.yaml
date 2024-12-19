@@ -4,7 +4,7 @@ services:
   gethnode:
     build:
       context: ../../
-      dockerfile: ./build/node/geth.dockerfile
+      dockerfile: ./build/gethnode/geth.dockerfile
       args:
         GETH_VER: v1.14.12
         OS_VER: 3.18

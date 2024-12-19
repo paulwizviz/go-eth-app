@@ -1,16 +1,14 @@
 // For the purpose of this project we don't need a fully qualified
 // module name
-module paulwizviz/go-eth-app
+module github.com/paulwizviz/go-eth-app
 
 go 1.23.0
 
 require (
 	github.com/ethereum/go-ethereum v1.14.12
-	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
-	golang.org/x/crypto v0.22.0
 )
 
 require (
@@ -30,6 +28,7 @@ require (
 	github.com/ethereum/go-verkle v0.1.1-0.20240829091221-dffa7562dbe9 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.3.1 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
@@ -38,6 +37,7 @@ require (
 	github.com/supranational/blst v0.3.13 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect

@@ -16,24 +16,31 @@
 // For a list of contributors, refer to the CONTRIBUTORS file or the
 // repository's commit history.
 
+// This example demonstrate operations to explore blocks in a public network
+// using the internal implementation of JSON-RPC.
+
 package main
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"paulwizviz/go-eth-app/internal/jrpc"
+
+	"github.com/paulwizviz/go-eth-app/internal/jrpc"
 )
 
 func main() {
-	url := "https://ethereum-rpc.publicnode.com"
-	client := jrpc.NewDefaultClient(url)
 
+	// Instantiate a default client of internal JSON-RPC package
+	client := jrpc.NewDefaultClient("https://ethereum-rpc.publicnode.com")
+
+	// Get the most recent block
 	number, err := client.BlockNumber(context.TODO(), 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Get detail of the block
 	blknum := fmt.Sprintf("0x%x", number)
 	blk, err := client.GetBlockByNumber(context.TODO(), 1, blknum, true)
 	if err != nil {

@@ -8,8 +8,9 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"paulwizviz/go-eth-app/internal/contract"
-	"paulwizviz/go-eth-app/internal/jrpc"
+
+	"github.com/paulwizviz/go-eth-app/internal/contract"
+	"github.com/paulwizviz/go-eth-app/internal/jrpc"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"

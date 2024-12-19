@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"paulwizviz/go-eth-app/internal/eth"
 	"sort"
+
+	"github.com/paulwizviz/go-eth-app/internal/eth"
 )
 
 // RestServer is an abstraction of a RESTFul server

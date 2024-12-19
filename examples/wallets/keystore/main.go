@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"paulwizviz/go-eth-app/internal/wallet"
+
+	"github.com/paulwizviz/go-eth-app/internal/wallet"
 )
 
 func main() {

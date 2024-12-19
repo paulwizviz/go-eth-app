@@ -19,14 +19,15 @@
 package contract
 
 import (
+	"bytes"
 	"crypto/ecdsa"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 	"os"
-	"paulwizviz/go-eth-app/internal/jrpc"
 	"strings"
+
+	"github.com/paulwizviz/go-eth-app/internal/jrpc"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -94,7 +95,7 @@ func createCallArg(contractAddr string, fnc string) jrpc.TxnArg {
 
 	return jrpc.TxnArg{
 		To:   contractAddr,
-		Data: fmt.Sprintf("0x%v", hex.EncodeToString(selector)),
+		Data: fmt.Sprintf("0x%X", selector),
 	}
 }
 
@@ -123,7 +124,7 @@ func EncodeConstructorArg(contractABI string, args ...any) ([]byte, error) {
 }
 
 func encodeConstructorArg(contractABI string, args ...any) ([]byte, error) {
-	parseABI, err := abi.JSON(strings.NewReader(contractABI))
+	parseABI, err := abi.JSON(bytes.NewReader([]byte(contractABI)))
 	if err != nil {
 		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeConstructorArg, err)
 	}

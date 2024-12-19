@@ -3,9 +3,12 @@ package eth
 import (
 	"encoding/json"
 	"log"
-	"paulwizviz/go-eth-app/internal/counter"
-	"paulwizviz/go-eth-app/internal/observer"
-	"paulwizviz/go-eth-app/internal/store"
+
+	"github.com/paulwizviz/go-eth-app/internal/observer"
+
+	"github.com/paulwizviz/go-eth-app/internal/store"
+
+	"github.com/paulwizviz/go-eth-app/internal/counter"
 )
 
 // Parser represents a handler to enable a

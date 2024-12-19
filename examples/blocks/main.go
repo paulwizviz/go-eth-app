@@ -22,7 +22,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"paulwizviz/go-eth-app/internal/jrpc"
+
+	"github.com/paulwizviz/go-eth-app/internal/jrpc"
 )
 
 func main() {

@@ -91,3 +91,77 @@ func Example_signTransaction() {
 	// R: 42493984409369267390634873737391917718079187906863432014006479694048185171415
 	// S: 42796957355589767142391483339700377686928456514032568249873161001150488752575
 }
+
+func Example_createParsedABI() {
+	content, err := extractContractABI("./testdata/HelloWorld.abi")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(content)
+	abi, err := createParsedABI(content)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(abi)
+
+	// Output:
+	// [{"inputs":[{"internalType":"uint256","name":"initialValue","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getValue","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"newValue","type":"uint256"}],"name":"setValue","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"storedValue","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
+	// {constructor(uint256 initialValue) returns() map[getValue:function getValue() view returns(uint256) setValue:function setValue(uint256 newValue) returns() storedValue:function storedValue() view returns(uint256)] map[] map[]  }
+
+}
+
+func Example_encodeConstructor() {
+	contractBin, err := extractContractBin("./testdata/HelloWorld.bin")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	contractABI, err := extractContractABI("./testdata/HelloWorld.abi")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	parsedABI, err := createParsedABI(contractABI)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	arg1 := big.NewInt(10)
+	constructor, err := encodeConstructor(contractBin, parsedABI, arg1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(constructor)
+
+	// Output:
+	// [96 128 96 64 82 52 128 21 96 14 87 95 95 253 91 80 96 64 81 97 2 15 56 3 128 97 2 15 131 57 129 129 1 96 64 82 129 1 144 96 46 145 144 96 107 86 91 128 95 129 144 85 80 80 96 145 86 91 95 95 253 91 95 129 144 80 145 144 80 86 91 96 77 129 96 61 86 91 129 20 96 86 87 95 95 253 91 80 86 91 95 129 81 144 80 96 101 129 96 70 86 91 146 145 80 80 86 91 95 96 32 130 132 3 18 21 96 125 87 96 124 96 57 86 91 91 95 96 136 132 130 133 1 96 89 86 91 145 80 80 146 145 80 80 86 91 97 1 113 128 97 0 158 95 57 95 243 254 96 128 96 64 82 52 128 21 97 0 15 87 95 95 253 91 80 96 4 54 16 97 0 63 87 95 53 96 224 28 128 99 32 150 82 85 20 97 0 67 87 128 99 85 36 16 119 20 97 0 97 87 128 99 109 97 157 170 20 97 0 125 87 91 95 95 253 91 97 0 75 97 0 155 86 91 96 64 81 97 0 88 145 144 97 0 201 86 91 96 64 81 128 145 3 144 243 91 97 0 123 96 4 128 54 3 129 1 144 97 0 118 145 144 97 1 16 86 91 97 0 163 86 91 0 91 97 0 133 97 0 172 86 91 96 64 81 97 0 146 145 144 97 0 201 86 91 96 64 81 128 145 3 144 243 91 95 95 84 144 80 144 86 91 128 95 129 144 85 80 80 86 91 95 84 129 86 91 95 129 144 80 145 144 80 86 91 97 0 195 129 97 0 177 86 91 130 82 80 80 86 91 95 96 32 130 1 144 80 97 0 220 95 131 1 132 97 0 186 86 91 146 145 80 80 86 91 95 95 253 91 97 0 239 129 97 0 177 86 91 129 20 97 0 249 87 95 95 253 91 80 86 91 95 129 53 144 80 97 1 10 129 97 0 230 86 91 146 145 80 80 86 91 95 96 32 130 132 3 18 21 97 1 37 87 97 1 36 97 0 226 86 91 91 95 97 1 50 132 130 133 1 97 0 252 86 91 145 80 80 146 145 80 80 86 254 162 100 105 112 102 115 88 34 18 32 124 96 103 101 239 217 65 118 120 240 220 119 160 211 176 134 111 102 50 38 22 155 58 161 113 140 1 208 198 125 142 166 100 115 111 108 99 67 0 8 28 0 51 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 10]
+}
+
+func Example_encodeFnc() {
+	contractABI, err := extractContractABI("./testdata/HelloWorld.abi")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	parsedABI, err := createParsedABI(contractABI)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fnc, err := encodeFnc(parsedABI, "getValue")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(fnc)
+
+	// Output:
+	// [32 150 82 85]
+}

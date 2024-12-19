@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -37,12 +38,12 @@ var (
 	ErrExtractABIContent = errors.New("unable to extract contract ABI content")
 	// ErrSignTxn error signing transaction
 	ErrSignTxn = errors.New("unable to sign transaction")
-	// ErrUnableToSendTxn error sending transaction
-	ErrUnableToSendTxn = errors.New("unable to send txn")
-	// ErrUnableToEncodeConstructorArg error encoding constructor arg
-	ErrUnableToEncodeConstructorArg = errors.New("unable to encode constructor arg")
 	// ErrCreateParseABI error generating parsed ABI
 	ErrCreateParseABI = errors.New("unable to create parsed ABI")
+	// ErrEncodeConstructor error encoding constructor
+	ErrEncodeConstructor = errors.New("unable to encode constructor")
+	// ErrEncodeFnc error encoding function
+	ErrEncodeFnc = errors.New("unable to encode function")
 )
 
 // ExtractContentBin extract the content of bin file
@@ -89,6 +90,33 @@ func createParsedABI(contractABI string) (abi.ABI, error) {
 		return abi.ABI{}, fmt.Errorf("%w-%v", ErrCreateParseABI, err)
 	}
 	return parseABI, nil
+}
+
+// EncodeConstructor bundle contract bin and arguments into a single byte slice
+func EncodeConstructor(contractBin string, parsedABI abi.ABI, args ...any) ([]byte, error) {
+	return encodeConstructor(contractBin, parsedABI, args)
+}
+
+func encodeConstructor(contractBin string, parsedABI abi.ABI, args ...any) ([]byte, error) {
+	packedArgs, err := parsedABI.Pack("", args...)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrEncodeConstructor, err)
+	}
+	b := append(common.FromHex(contractBin), packedArgs...)
+	return b, nil
+}
+
+// EncodeFnc bundle function name into a single byte slice
+func EncodeFnc(parseABI abi.ABI, fnc string, args ...any) ([]byte, error) {
+	return encodeFnc(parseABI, fnc, args...)
+}
+
+func encodeFnc(parseABI abi.ABI, fnc string, args ...any) ([]byte, error) {
+	encodedFnc, err := parseABI.Pack(fnc, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%w-%v", ErrEncodeFnc, err)
+	}
+	return encodedFnc, nil
 }
 
 // CreateContractEIP1559Txn instantiate a Dynanic Fee Transaction type for contract creation

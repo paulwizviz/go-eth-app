@@ -1,5 +1,5 @@
 // This example demonstrate the steps involved in deploying
-// contracts to developer's node
+// contracts to Geth node in dev mode.
 
 package main
 
@@ -21,6 +21,7 @@ import (
 
 func main() {
 
+	// Establish a jprc clent.
 	client := jrpc.NewDefaultClient("http://localhost:8545")
 
 	devAcc, err := getDevRandomAcct(context.TODO(), client)
@@ -59,7 +60,7 @@ func main() {
 	// Pack contract byte slice and encoded argument byte slice into a single byte slice
 	fullData := append(common.FromHex(contractBin), encodedConstArg...)
 
-	// Deploy the contract to dev node
+	// Deploy the contract to the node
 	txn := jrpc.TxnArg{
 		From: devAcc,
 		Data: fmt.Sprintf("0x%X", fullData),
@@ -74,6 +75,7 @@ func main() {
 	// Sleep to allow node to write to chain.
 	time.Sleep(1 * time.Second)
 
+	// Get receipt for the transaction hash
 	receipt, err := client.GetTxnReceipt(context.TODO(), 1, txnHash)
 	if err != nil {
 		log.Fatal(err)
@@ -120,7 +122,7 @@ func main() {
 	// Sleep to allow node to update the chain
 	time.Sleep(1 * time.Second)
 
-	// Get the value
+	// Get the value after calling setValue
 	getValueCall2, err := client.Call(context.TODO(), 1, getValTxn, jrpc.BlockTagLATEST)
 	if err != nil {
 		log.Fatal(err)

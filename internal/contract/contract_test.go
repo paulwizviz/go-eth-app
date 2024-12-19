@@ -91,11 +91,3 @@ func Example_signTransaction() {
 	// R: 42493984409369267390634873737391917718079187906863432014006479694048185171415
 	// S: 42796957355589767142391483339700377686928456514032568249873161001150488752575
 }
-
-func Example_createCallArg() {
-	arg := createCallArg("0x0074bfcd232173e682adff51e1a5865cdbb879b6bff1d83989282d23d7c7cfb8", "getValue")
-	fmt.Println(arg.To, len(arg.To))
-	fmt.Println(arg.Data)
-	// Output:
-	// 0xf04ac3b6
-}

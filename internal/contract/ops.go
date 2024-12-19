@@ -19,7 +19,6 @@
 package contract
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
@@ -27,11 +26,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/paulwizviz/go-eth-app/internal/jrpc"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/types"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -45,8 +41,8 @@ var (
 	ErrUnableToSendTxn = errors.New("unable to send txn")
 	// ErrUnableToEncodeConstructorArg error encoding constructor arg
 	ErrUnableToEncodeConstructorArg = errors.New("unable to encode constructor arg")
-	// ErrUnableToEncodeFnc error encoding function calls
-	ErrUnableToEncodeFnc = errors.New("unable to encode function call")
+	// ErrCreateParseABI error generating parsed ABI
+	ErrCreateParseABI = errors.New("unable to create parsed ABI")
 )
 
 // ExtractContentBin extract the content of bin file
@@ -82,53 +78,17 @@ func extractContractABI(abiFile string) (string, error) {
 	return string(content), err
 }
 
-// CreateCallArg create call argument
-func CreateCallArg(contractAddr string, fnc string) jrpc.TxnArg {
-	return createCallArg(contractAddr, fnc)
+// CreateParsedABI a wrapper to create Geth abi.ABI
+func CreateParsedABI(contractABI string) (abi.ABI, error) {
+	return createParsedABI(contractABI)
 }
 
-func createCallArg(contractAddr string, fnc string) jrpc.TxnArg {
-	// Hash the function signature using Keccak-256
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write([]byte(fnc))
-	selector := hash.Sum(nil)[:4] // Take the first 4 bytes
-
-	return jrpc.TxnArg{
-		To:   contractAddr,
-		Data: fmt.Sprintf("0x%X", selector),
-	}
-}
-
-// EncodeFuncCall encode function call
-func EncodeFuncCall(contractABI string, fnc string, args ...any) ([]byte, error) {
-	return encodeFuncCall(contractABI, fnc, args...)
-}
-
-func encodeFuncCall(contractABI string, fnc string, args ...any) ([]byte, error) {
+func createParsedABI(contractABI string) (abi.ABI, error) {
 	parseABI, err := abi.JSON(strings.NewReader(contractABI))
 	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeFnc, err)
+		return abi.ABI{}, fmt.Errorf("%w-%v", ErrCreateParseABI, err)
 	}
-
-	fncData, err := parseABI.Pack(fnc, args...)
-	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeFnc, err)
-	}
-
-	return fncData, nil
-}
-
-// EncodeConstructorArg encode contract ABI
-func EncodeConstructorArg(contractABI string, args ...any) ([]byte, error) {
-	return encodeConstructorArg(contractABI, args...)
-}
-
-func encodeConstructorArg(contractABI string, args ...any) ([]byte, error) {
-	parseABI, err := abi.JSON(bytes.NewReader([]byte(contractABI)))
-	if err != nil {
-		return nil, fmt.Errorf("%w-%v", ErrUnableToEncodeConstructorArg, err)
-	}
-	return parseABI.Pack("", args...)
+	return parseABI, nil
 }
 
 // CreateContractEIP1559Txn instantiate a Dynanic Fee Transaction type for contract creation

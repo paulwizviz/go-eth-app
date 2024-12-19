@@ -29,6 +29,9 @@ This project uses Docker to build artefacts and enable networks to support devel
 
 ## Working Examples
 
+* Blocks
+    * [Explore public blocks](./examples/blocks/ex1/main.go)
+    * [Explore dev blocks](./examples/blocks/ex2/main.go)
 * Contracts
     * Deploy
         * [Dev Node](./examples/contracts/deploy/ex1/main.go)

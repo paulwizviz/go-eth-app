@@ -149,8 +149,25 @@ var (
 // Block is a representation of a block from Ethereum
 // node
 type Block struct {
-	Number       string `json:"number"`
-	Transactions Txn    `json:"transactions"`
+	Number           string   `json:"number"`           // Block number in hash
+	Hash             string   `json:"hash"`             // Block hash
+	ParentHash       string   `json:"parentHash"`       // Hash of the parent block
+	Nonce            string   `json:"nonce"`            // Proof-of-work nonce
+	Sha3Uncles       string   `json:"sha3Uncles"`       // SHA3 of uncles
+	LogsBloom        string   `json:"logsBloom"`        // Bloom filter for logs
+	TransactionsRoot string   `json:"transactionsRoot"` // Root hash of transactions trie
+	StateRoot        string   `json:"stateRoot"`        // Root hash of state trie
+	ReceiptsRoot     string   `json:"receiptsRoot"`     // Root hash of receipts trie
+	Miner            string   `json:"miner"`            // Address of the miner
+	Difficulty       string   `json:"difficulty"`       // Difficulty of the block
+	TotalDifficulty  string   `json:"totalDifficulty"`  // Cumulative difficulty
+	ExtraData        string   `json:"extraData"`        // Extra data in the block
+	Size             string   `json:"size"`             // Size of the block in bytes
+	GasLimit         string   `json:"gasLimit"`         // Maximum gas allowed
+	GasUsed          string   `json:"gasUsed"`          // Gas used in the block
+	Timestamp        string   `json:"timestamp"`        // Timestamp of the block
+	Transactions     Txn      `json:"transactions"`     // List of transactions
+	Uncles           []string `json:"uncles"`           // List of uncle hashes
 }
 
 func (b *Block) UnmarshalJSON(data []byte) error {

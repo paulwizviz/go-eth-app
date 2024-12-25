@@ -90,15 +90,14 @@ func main() {
 	}
 	fmt.Println(txnHash)
 
-	// Sleep to allow node to write to chain.
-	time.Sleep(1 * time.Second)
-
+	ch := getContractAddress(client, txnHash)
 	// Get receipt for the transaction hash
-	receipt, err := client.GetTxnReceipt(context.TODO(), 1, txnHash)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(receipt.ContractAddress)
+	// receipt, err := client.GetTxnReceipt(context.TODO(), 1, txnHash)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	contractAddress := <-ch
+	fmt.Println("Contract address: ", contractAddress)
 
 	// Encode the function "getValue" and invoke it
 	encodedGetValue, err := parsedABI.Pack("getValue")
@@ -107,7 +106,7 @@ func main() {
 	}
 
 	getValTxn := jrpc.TxnArg{
-		To:   receipt.ContractAddress,
+		To:   contractAddress,
 		Data: fmt.Sprintf("0x%X", encodedGetValue),
 	}
 	getValueCall1, err := client.Call(context.TODO(), 1, getValTxn, jrpc.BlockTagLATEST)
@@ -127,7 +126,7 @@ func main() {
 	}
 	setValueTxn := jrpc.TxnArg{
 		From: devAcc,
-		To:   receipt.ContractAddress,
+		To:   contractAddress,
 		Data: fmt.Sprintf("0x%X", encodedSetValue),
 		Gas:  "0x800000",
 	}
@@ -150,6 +149,28 @@ func main() {
 	value2.SetString(getValueCall2[2:], 16)
 	fmt.Println(value2)
 
+}
+
+func getContractAddress(client jrpc.Client, txnHash string) <-chan string {
+	c := make(chan string)
+	go func() {
+		i := 0
+	loop:
+		for {
+			i++
+			// Get receipt for the transaction hash
+			receipt, err := client.GetTxnReceipt(context.TODO(), uint(i), txnHash)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
+			if receipt.ContractAddress != "" {
+				c <- receipt.ContractAddress
+				break loop
+			}
+		}
+	}()
+	return c
 }
 
 func getDevRandomAcct(ctx context.Context, client jrpc.Client) (string, error) {

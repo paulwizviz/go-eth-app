@@ -30,7 +30,8 @@ This project uses Docker to build artefacts and enable networks to support devel
 ## Working Examples
 
 * Blocks
-    * [Explore public blocks](./examples/blocks/ex1/main.go)
+    * [Explore public blocks - using internal JSON-RPC](./examples/blocks/ex1/main.go)
+        * [Explore public blocks - using Go ethereum ethclient package](./examples/blocks/ex3/main.go)
     * [Explore dev blocks](./examples/blocks/ex2/main.go)
 * Contracts
     * Deploy

@@ -2,8 +2,10 @@ services:
 
   geth:
     image: ${GO_CLIENT_TOOL}
+    container_name: geth_dev
     command: /root/init.sh
     volumes:
+      - ./datastore:/root/datastore
       - ./init.sh:/root/init.sh
     ports:
       - "8545:8545"
